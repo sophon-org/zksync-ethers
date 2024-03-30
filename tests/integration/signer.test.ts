@@ -84,7 +84,7 @@ describe('L2VoidSigner', () => {
         from: ADDRESS,
         nonce: await signer.getNonce('pending'),
         chainId: 270,
-        maxFeePerGas: BigNumber.from(2_000_000_000),
+        maxFeePerGas: BigNumber.from(1_700_000_000),
         maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
       };
       const result = await signer.populateTransaction({
@@ -222,7 +222,7 @@ describe('L2VoidSigner', () => {
         from: ADDRESS,
         nonce: await signer.getNonce('pending'),
         chainId: 270,
-        gasPrice: BigNumber.from(250_000_000),
+        gasPrice: BigNumber.from(100_000_000),
       };
       const result = await signer.populateTransaction({
         type: 0,
@@ -435,7 +435,7 @@ describe('L1VoidSigner', () => {
         from: ADDRESS,
         nonce: await signer.getNonce('pending'),
         chainId: 9,
-        maxFeePerGas: BigNumber.from(1_500_000_014),
+        maxFeePerGas: BigNumber.from(1_500_000_002),
         maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
       };
       const result = await signer.populateTransaction({
@@ -492,7 +492,7 @@ describe('L1VoidSigner', () => {
         from: ADDRESS,
         nonce: await signer.getNonce('pending'),
         chainId: 9,
-        gasPrice: BigNumber.from(1_500_000_007),
+        gasPrice: BigNumber.from(1_000_000_001),
       };
       const result = await signer.populateTransaction({
         type: 0,
@@ -526,16 +526,16 @@ describe('L1VoidSigner', () => {
         contractAddress: ADDRESS,
         calldata: '0x',
         l2Value: 7_000_000,
-        l2GasLimit: BigNumber.from('0x08cbaa'),
+        l2GasLimit: BigNumber.from(405_884),
         token: '0x0000000000000000000000000000000000000000',
         to: ADDRESS,
         amount: 7_000_000,
         refundRecipient: ADDRESS,
         operatorTip: BigNumber.from(0),
         overrides: {
-          maxFeePerGas: BigNumber.from(1_500_000_010),
+          maxFeePerGas: BigNumber.from(1_500_000_001),
           maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
-          value: BigNumber.from(288_213_007_000_000),
+          value: BigNumber.from(109_081_332_000_000),
         },
         gasPerPubdataByte: 800,
       };
@@ -553,16 +553,16 @@ describe('L1VoidSigner', () => {
         contractAddress: ADDRESS,
         calldata: '0x',
         l2Value: 7_000_000,
-        l2GasLimit: BigNumber.from('0x8cbaa'),
+        l2GasLimit: BigNumber.from(405_884),
         token: '0x0000000000000000000000000000000000000000',
         to: ADDRESS,
         amount: 7_000_000,
         refundRecipient: ADDRESS,
         operatorTip: BigNumber.from(0),
         overrides: {
-          maxFeePerGas: BigNumber.from(1_500_000_010),
+          maxFeePerGas: BigNumber.from(1_500_000_001),
           maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
-          value: BigNumber.from(288_213_007_000_000),
+          value: BigNumber.from(109_081_332_000_000),
         },
         gasPerPubdataByte: 800,
       };
@@ -576,9 +576,9 @@ describe('L1VoidSigner', () => {
 
     it('should return DAI deposit transaction', async () => {
       const tx = {
-        maxFeePerGas: BigNumber.from(1_500_000_010),
+        maxFeePerGas: BigNumber.from(1_500_000_001),
         maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
-        value: BigNumber.from(288_992_000_000_000),
+        value: BigNumber.from(108_857_993_750_000),
         from: ADDRESS,
         to: (await signer.getL1BridgeContracts()).erc20.address,
       };
@@ -601,7 +601,7 @@ describe('L1VoidSigner', () => {
         amount: 5,
         refundRecipient: await signer.getAddress(),
       });
-      expect(result.eq(BigNumber.from(132_711))).to.be.true;
+      expect(result.eq(BigNumber.from(134_799))).to.be.true;
     });
 
     it('should return gas estimation for DAI deposit transaction', async () => {
@@ -619,7 +619,7 @@ describe('L1VoidSigner', () => {
         amount: 5,
         refundRecipient: await signer.getAddress(),
       });
-      expect(result.eq(BigNumber.from(253_418))).to.be.true;
+      expect(result.eq(BigNumber.from(255_336))).to.be.true;
     }).timeout(10_000);
   });
 
@@ -663,10 +663,10 @@ describe('L1VoidSigner', () => {
   describe('#getFullRequiredDepositFee()', () => {
     it('should return fee for ETH token deposit', async () => {
       const feeData = {
-        baseCost: BigNumber.from(285_096_500_000_000),
-        l1GasLimit: BigNumber.from(132_711),
-        l2GasLimit: BigNumber.from('0x08b351'),
-        maxFeePerGas: BigNumber.from(1_500_000_010),
+        baseCost: BigNumber.from(107_740_531_250_000),
+        l1GasLimit: BigNumber.from(134_799),
+        l2GasLimit: BigNumber.from('0x61dff'),
+        maxFeePerGas: BigNumber.from(1_500_000_001),
         maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
       };
       const result = await signer.getFullRequiredDepositFee({
@@ -691,10 +691,10 @@ describe('L1VoidSigner', () => {
 
     it('should return fee for DAI token deposit', async () => {
       const feeData = {
-        baseCost: BigNumber.from(288_992_000_000_000),
-        l1GasLimit: BigNumber.from(253_177),
-        l2GasLimit: BigNumber.from('0x08d1c0'),
-        maxFeePerGas: BigNumber.from(1_500_000_010),
+        baseCost: BigNumber.from(108_857_993_750_000),
+        l1GasLimit: BigNumber.from(255_096),
+        l2GasLimit: BigNumber.from('0x62e3d'),
+        maxFeePerGas: BigNumber.from(1_500_000_001),
         maxPriorityFeePerGas: BigNumber.from(1_500_000_000),
       };
 

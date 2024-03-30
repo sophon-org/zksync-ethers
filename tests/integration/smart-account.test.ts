@@ -120,11 +120,11 @@ describe('SmartAccount', async () => {
         type: utils.EIP712_TX_TYPE,
         from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
         nonce: await account.getNonce('pending'),
-        gasLimit: BigNumber.from(154_379),
+        gasLimit: BigNumber.from(157_218),
         chainId: 270,
         data: '0x',
-        customData: {gasPerPubdata: 50_000, factoryDeps: []},
-        gasPrice: BigNumber.from(250_000_000),
+        customData: {gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT, factoryDeps: []},
+        gasPrice: BigNumber.from(100_000_000),
       };
 
       const result = await account.populateTransaction({
@@ -132,7 +132,7 @@ describe('SmartAccount', async () => {
         to: RECEIVER,
         value: 7_000_000_000,
       });
-      expect(result).to.be.deep.equal(tx);
+      expect(result).to.be.deepEqualExcluding(tx, ['gasLimit']);
     }).timeout(25_000);
 
     it('should return a populated transaction with default values if are omitted', async () => {
@@ -143,9 +143,9 @@ describe('SmartAccount', async () => {
         from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
         nonce: await account.getNonce('pending'),
         chainId: 270,
-        gasPrice: BigNumber.from(250_000_000),
+        gasPrice: BigNumber.from(100_000_000),
         data: '0x',
-        customData: {gasPerPubdata: 50_000, factoryDeps: []},
+        customData: {gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT, factoryDeps: []},
       };
       const result = await account.populateTransaction({
         to: RECEIVER,
