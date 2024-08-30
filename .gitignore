@@ -1,10 +1,10 @@
-build
+#build
 node_modules
 tests/build
 coverage
 docs
-typechain
-!src/typechain
+#typechain
+#!src/typechain
 
 .idea
 .vscode
