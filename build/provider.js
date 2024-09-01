@@ -461,7 +461,7 @@ class Provider extends ethers_1.ethers.providers.JsonRpcProvider {
         };
         transaction.type = utils_1.EIP712_TX_TYPE;
         if (transaction.customData.factoryDeps) {
-            result.eip712Meta.factoryDeps = transaction.customData.factoryDeps.map((dep) => 
+            result.eip712Meta.factoryDeps = transaction.customData.factoryDeps.map((dep) =>
             // TODO (SMA-1605): we arraify instead of hexlifying because server expects Vec<u8>.
             //  We should change deserialization there.
             Array.from(ethers_1.utils.arrayify(dep)));
@@ -699,7 +699,7 @@ class Provider extends ethers_1.ethers.providers.JsonRpcProvider {
      * console.log(`Bridgehub: ${await provider.getBridgehubContractAddress()}`);
      */
     async getBridgehubContractAddress() {
-        this.contractAddresses.bridgehubContract = "0x91951F0903381C24E02c0fd0470694a8a3dd63cF";
+        this.contractAddresses.bridgehubContract = "0x11Cb5B7C32F69947Ef2D712E1a26F0B5d2d4f418";
         if (!this.contractAddresses.bridgehubContract) {
             this.contractAddresses.bridgehubContract = await this.send('zks_getBridgehubContract', []);
         }
@@ -1040,7 +1040,7 @@ class Provider extends ethers_1.ethers.providers.JsonRpcProvider {
      * @param address The account to fetch storage values and proofs for.
      * @param keys The vector of storage keys in the account.
      * @param l1BatchNumber The number of the L1 batch specifying the point in time at which the requested values are returned.
-  
+
      * @example
      *
      * import { Provider, types, utils } from "zksync-ethers";

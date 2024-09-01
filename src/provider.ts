@@ -893,7 +893,7 @@ export class Provider extends ethers.providers.JsonRpcProvider {
    * console.log(`Bridgehub: ${await provider.getBridgehubContractAddress()}`);
    */
   async getBridgehubContractAddress(): Promise<Address> {
-    this.contractAddresses.bridgehubContract = "0x91951F0903381C24E02c0fd0470694a8a3dd63cF";
+    this.contractAddresses.bridgehubContract = "0x11Cb5B7C32F69947Ef2D712E1a26F0B5d2d4f418";
     if (!this.contractAddresses.bridgehubContract) {
       this.contractAddresses.bridgehubContract = await this.send(
         'zks_getBridgehubContract',
