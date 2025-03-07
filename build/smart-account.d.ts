@@ -1,7 +1,6 @@
-import { ethers, BigNumberish, BigNumber } from 'ethers';
+import { AbstractSigner, BigNumberish, BlockTag, ethers, SigningKey } from 'ethers';
 import { Provider } from './provider';
-import { TransactionResponse, TransactionRequest, SmartAccountSigner, TransactionBuilder, Address, BalancesMap, PayloadSigner, PaymasterParams, BlockTag } from './types';
-import { Signer, TypedDataDomain, TypedDataField, TypedDataSigner } from '@ethersproject/abstract-signer';
+import { Address, BalancesMap, PayloadSigner, PaymasterParams, SmartAccountSigner, TransactionBuilder, TransactionLike, TransactionRequest, TransactionResponse } from './types';
 /**
  * A `SmartAccount` is a signer which can be configured to sign various payloads using a provided secret.
  * The secret can be in any form, allowing for flexibility when working with different account implementations.
@@ -10,13 +9,13 @@ import { Signer, TypedDataDomain, TypedDataField, TypedDataSigner } from '@ether
  * It is compatible with {@link ethers.ContractFactory} for deploying contracts/accounts, as well as with {@link ethers.Contract}
  * for interacting with contracts/accounts using provided ABI along with custom transaction signing logic.
  */
-export declare class SmartAccount extends Signer implements TypedDataSigner {
+export declare class SmartAccount extends AbstractSigner {
     /** Address to which the `SmartAccount` is bound. */
     readonly address: string;
     /** Secret in any form that can be used for signing different payloads. */
     readonly secret: any;
     /** Provider to which the `SmartAccount` is connected. */
-    readonly provider: Provider;
+    readonly provider: null | Provider;
     /** Custom method for signing different payloads. */
     protected payloadSigner: PayloadSigner;
     /** Custom method for populating transaction requests. */
@@ -25,8 +24,8 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      * Creates a `SmartAccount` instance with provided `signer` and `provider`.
      * By default, uses {@link signPayloadWithECDSA} and {@link populateTransactionECDSA}.
      *
-     * @param signer Contains necessary properties for signing payloads.
-     * @param provider The provider to connect to.
+     * @param signer - Contains necessary properties for signing payloads.
+     * @param provider - The provider to connect to. Can be `null` for offline usage.
      *
      * @example
      *
@@ -41,11 +40,13 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *   provider
      * );
      */
-    constructor(signer: SmartAccountSigner, provider: Provider);
+    constructor(signer: SmartAccountSigner, provider?: null | Provider);
     /**
-     * Creates a new instance of `SmartAccount` connected to a provider.
+     * Creates a new instance of `SmartAccount` connected to a provider or detached
+     * from any provider if `null` is provided.
      *
-     * @param provider The provider to connect the `SmartAccount` to.
+     * @param provider - The provider to connect the `SmartAccount` to.
+     * If `null`, the `SmartAccount` will be detached from any provider.
      *
      * @example
      *
@@ -63,7 +64,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      * const mainnetProvider = Provider.getDefaultProvider(types.Network.Mainnet);
      * const mainnetAccount = sepoliaAccount.connect(mainnetProvider);
      */
-    connect(provider: Provider): SmartAccount;
+    connect(provider: null | Provider): SmartAccount;
     /**
      * Returns the address of the account.
      *
@@ -86,8 +87,8 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
     /**
      * Returns the balance of the account.
      *
-     * @param [token] The token address to query balance for. Defaults to the native token.
-     * @param [blockTag='committed'] The block tag to get the balance at.
+     * @param [token] - The token address to query balance for. Defaults to the native token.
+     * @param [blockTag='committed'] - The block tag to get the balance at.
      *
      * @example
      *
@@ -104,7 +105,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const balance = await account.getBalance();
      */
-    getBalance(token?: Address, blockTag?: BlockTag): Promise<BigNumber>;
+    getBalance(token?: Address, blockTag?: BlockTag): Promise<bigint>;
     /**
      * Returns all token balances of the account.
      *
@@ -142,10 +143,11 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const nonce = await account.getDeploymentNonce();
      */
-    getDeploymentNonce(): Promise<BigNumber>;
+    getDeploymentNonce(): Promise<bigint>;
     /**
      * Populates the transaction `tx` using the provided {@link TransactionBuilder} function.
-     * If `tx.from` is not set, it sets the value from the `SmartAccount.getAddress()` method.
+     * If `tx.from` is not set, it sets the value from the {@link getAddress} method which can
+     * be utilized in the {@link TransactionBuilder} function.
      *
      * @param tx The transaction that needs to be populated.
      *
@@ -168,11 +170,11 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *   value: 7_000_000_000,
      * });
      */
-    populateTransaction(tx: TransactionRequest): Promise<TransactionRequest>;
+    populateTransaction(tx: TransactionRequest): Promise<TransactionLike>;
     /**
      * Signs the transaction `tx` using the provided {@link PayloadSigner} function,
-     * returning the fully signed transaction.The `SmartAccount.populateTransaction(tx)`
-     * method is called first to ensure that all necessary properties for the transaction to be valid
+     * returning the fully signed transaction. The {@link populateTransaction} method
+     * is called first to ensure that all necessary properties for the transaction to be valid
      * have been populated.
      *
      * @param tx The transaction that needs to be signed.
@@ -193,12 +195,12 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const signedTx = await account.signTransaction({
      *   to: "<RECEIVER>",
-     *   value: ethers.utils.parseEther('1'),
+     *   value: ethers.parseEther('1'),
      * });
      */
     signTransaction(tx: TransactionRequest): Promise<string>;
     /**
-     * Sends `tx` to the Network. The `SmartAccount.signTransaction(tx)`
+     * Sends `tx` to the Network. The {@link signTransaction}
      * is called first to ensure transaction is properly signed.
      *
      * @param tx The transaction that needs to be sent.
@@ -219,7 +221,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const signedTx = await account.sendTransaction({
      *   to: "<RECEIVER>",
-     *   value: ethers.utils.parseEther('1'),
+     *   value: ethers.parseEther('1'),
      * });
      */
     sendTransaction(tx: TransactionRequest): Promise<TransactionResponse>;
@@ -266,7 +268,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *   provider
      * );
      *
-     * const signedTypedData = await account._signTypedData(
+     * const signedTypedData = await account.signTypedData(
      *   {name: 'Example', version: '1', chainId: 270},
      *   {
      *     Person: [
@@ -277,40 +279,18 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *   {name: 'John', age: 30}
      * );
      */
-    _signTypedData(domain: TypedDataDomain, types: Record<string, Array<TypedDataField>>, value: Record<string, any>): Promise<string>;
-    /**
-     * Get the number of transactions ever sent for account, which is used as the `nonce` when sending a transaction.
-     *
-     * @param [blockTag] The block tag to query. If provided, the transaction count is as of that block.
-     *
-     * @example
-     *
-     * import { SmartAccount, Provider, types } from "zksync-ethers";
-     * import { ethers } from "ethers";
-     *
-     * const ADDRESS = "<ADDRESS>";
-     * const PRIVATE_KEY = "<PRIVATE_KEY>";
-     *
-     * const provider = Provider.getDefaultProvider(types.Network.Sepolia);
-     * const account = new SmartAccount(
-     *   {address: ADDRESS, secret: PRIVATE_KEY},
-     *   provider
-     * );
-     *
-     * const nonce = await account.getNonce();
-     */
-    getNonce(blockTag?: BlockTag): Promise<number>;
+    signTypedData(domain: ethers.TypedDataDomain, types: Record<string, ethers.TypedDataField[]>, value: Record<string, any>): Promise<string>;
     /**
      * Initiates the withdrawal process which withdraws ETH or any ERC20 token
      * from the associated account on L2 network to the target account on L1 network.
      *
-     * @param transaction Withdrawal transaction request.
-     * @param transaction.token The address of the token. ETH by default.
-     * @param transaction.amount The amount of the token to withdraw.
-     * @param [transaction.to] The address of the recipient on L1.
-     * @param [transaction.bridgeAddress] The address of the bridge contract to be used.
-     * @param [transaction.paymasterParams] Paymaster parameters.
-     * @param [transaction.overrides] Transaction's overrides which may be used to pass l2 gasLimit, gasPrice, value, etc.
+     * @param transaction - Withdrawal transaction request.
+     * @param transaction.token - The address of the token. ETH by default.
+     * @param transaction.amount - The amount of the token to withdraw.
+     * @param [transaction.to] - The address of the recipient on L1.
+     * @param [transaction.bridgeAddress] - The address of the bridge contract to be used.
+     * @param [transaction.paymasterParams] - Paymaster parameters.
+     * @param [transaction.overrides] - Transaction's overrides which may be used to pass l2 gasLimit, gasPrice, value, etc.
      *
      * @returns A Promise resolving to a withdrawal transaction response.
      *
@@ -329,7 +309,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const withdrawTx = await account.withdraw({
      *   token: utils.ETH_ADDRESS,
-     *   amount: 10_000_000,
+     *   amount: 10_000_000n,
      * });
      *
      * @example Withdraw ETH using paymaster to facilitate fee payment with an ERC20 token.
@@ -350,7 +330,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const withdrawTx = await account.withdraw({
      *   token: utils.ETH_ADDRESS,
-     *   amount: 10_000_000,
+     *   amount: 10_000_000n,
      *   paymasterParams: utils.getPaymasterParams(paymaster, {
      *     type: "ApprovalBased",
      *     token: token,
@@ -370,12 +350,12 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
     /**
      * Transfer ETH or any ERC20 token within the same interface.
      *
-     * @param transaction Transfer transaction request.
-     * @param transaction.to The address of the recipient.
-     * @param transaction.amount The address of the recipient.
-     * @param [transaction.token] The address of the recipient.
-     * @param [transaction.paymasterParams] The address of the recipient.
-     * @param [transaction.overrides] The address of the recipient.
+     * @param transaction - Transfer transaction request.
+     * @param transaction.to - The address of the recipient.
+     * @param transaction.amount - The address of the recipient.
+     * @param [transaction.token] - The address of the recipient.
+     * @param [transaction.paymasterParams] - The address of the recipient.
+     * @param [transaction.overrides] - The address of the recipient.
      *
      * @returns A Promise resolving to a transfer transaction response.
      *
@@ -396,7 +376,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      * const transferTx = await account.transfer({
      *   token: utils.ETH_ADDRESS,
      *   to: Wallet.createRandom().address,
-     *   amount: ethers.utils.parseEther("0.01"),
+     *   amount: ethers.parseEther("0.01"),
      * });
      *
      * const receipt = await transferTx.wait();
@@ -422,7 +402,7 @@ export declare class SmartAccount extends Signer implements TypedDataSigner {
      *
      * const transferTx = await account.transfer({
      *   to: Wallet.createRandom().address,
-     *   amount: ethers.utils.parseEther("0.01"),
+     *   amount: ethers.parseEther("0.01"),
      *   paymasterParams: utils.getPaymasterParams(paymaster, {
      *     type: "ApprovalBased",
      *     token: token,
@@ -465,7 +445,7 @@ export declare class ECDSASmartAccount {
      * const provider = Provider.getDefaultProvider(types.Network.Sepolia);
      * const account = ECDSASmartAccount.create(ADDRESS, PRIVATE_KEY, provider);
      */
-    static create(address: string, secret: string | ethers.utils.SigningKey, provider: Provider): SmartAccount;
+    static create(address: string, secret: string | SigningKey, provider: Provider): SmartAccount;
 }
 /**
  * A `MultisigECDSASmartAccount` is a factory which creates a `SmartAccount` instance
@@ -496,5 +476,5 @@ export declare class MultisigECDSASmartAccount {
      *   provider
      * );
      */
-    static create(address: string, secret: string[] | ethers.utils.SigningKey[], provider: Provider): SmartAccount;
+    static create(address: string, secret: string[] | SigningKey[], provider: Provider): SmartAccount;
 }
