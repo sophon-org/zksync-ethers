@@ -375,7 +375,7 @@ export function JsonRpcApiProvider<
      */
     async getBridgehubContractAddress(): Promise<Address> {
       this.contractAddresses.bridgehubContract =
-        '0x11Cb5B7C32F69947Ef2D712E1a26F0B5d2d4f418';
+        '0xC97F5f2FDE4fe6e220069F8D3718bE4FaC7C00f0';
       if (!this.contractAddresses().bridgehubContract) {
         this.contractAddresses().bridgehubContract = await this.send(
           'zks_getBridgehubContract',
