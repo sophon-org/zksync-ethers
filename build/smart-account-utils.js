@@ -23,28 +23,28 @@ const utils_1 = require("./utils");
  * };
  *
  * const txHash = EIP712Signer.getSignedDigest(tx);
- * const signature = await utils.signPayloadWithECDSA(txHash, PRIVATE_KEY);
+ * const result = await utils.signPayloadWithECDSA(txHash, PRIVATE_KEY);
  *
  * @example Sign message hash.
  *
  * import { utils } from "zksync-ethers";
- * import { ethers } from "ethers";
+ * import { hashMessage } from "ethers";
  *
  * const PRIVATE_KEY = "<PRIVATE_KEY>";
  *
  * const message = 'Hello World!';
- * const messageHash = ethers.utils.hashMessage(message);
+ * const messageHash = hashMessage(message);
  *
- * const signature = await utils.signPayloadWithECDSA(messageHash, PRIVATE_KEY);
+ * const result = await utils.signPayloadWithECDSA(messageHash, PRIVATE_KEY);
  *
  * @example Sign typed data hash.
  *
  * import { utils } from "zksync-ethers";
- * import { ethers } from "ethers";
+ * import { TypedDataEncoder } from "ethers";
  *
  * const PRIVATE_KEY = "<PRIVATE_KEY>";
  *
- * const typedDataHash = ethers.utils._TypedDataEncoder.hash(
+ * const typedDataHash = TypedDataEncoder.hash(
  *   {name: 'Example', version: '1', chainId: 270},
  *   {
  *     Person: [
@@ -54,10 +54,10 @@ const utils_1 = require("./utils");
  *   },
  *   {name: 'John', age: 30}
  * );
- * const signature = await utils.signPayloadWithECDSA(typedDataHash, PRIVATE_KEY);
+ * const result = await utils.signPayloadWithECDSA(typedDataHash, PRIVATE_KEY);
  */
 const signPayloadWithECDSA = async (payload, secret) => {
-    return ethers_1.ethers.utils.joinSignature(new ethers_1.ethers.Wallet(secret)._signingKey().signDigest(payload));
+    return new ethers_1.ethers.Wallet(secret).signingKey.sign(payload).serialized;
 };
 exports.signPayloadWithECDSA = signPayloadWithECDSA;
 /**
@@ -68,7 +68,7 @@ exports.signPayloadWithECDSA = signPayloadWithECDSA;
  * @param payload The payload that needs to be signed.
  * @param secret The list of the ECDSA private keys.
  *
- * @throws {Error} If the `secret` is not an array of at least two elements
+ * @throws {Error} If the `secret` is not an array of at least two elements.
  *
  * @example Sign EIP712 transaction hash.
  *
@@ -85,30 +85,30 @@ exports.signPayloadWithECDSA = signPayloadWithECDSA;
  * };
  *
  * const txHash = EIP712Signer.getSignedDigest(tx);
- * const signature = await utils.signPayloadWithMultipleECDSA(txHash, [PRIVATE_KEY1, PRIVATE_KEY2]);
+ * const result = await utils.signPayloadWithMultipleECDSA(typedDataHash, [PRIVATE_KEY1, PRIVATE_KEY2]);
  *
  * @example Sign message hash.
  *
  * import { utils } from "zksync-ethers";
- * import { ethers } from "ethers";
+ * import { hashMessage } from "ethers";
  *
  * const PRIVATE_KEY1 = "<PRIVATE_KEY1>";
  * const PRIVATE_KEY2 = "<PRIVATE_KEY2>";
  *
  * const message = 'Hello World!';
- * const messageHash = ethers.utils.hashMessage(message);
+ * const messageHash = hashMessage(message);
  *
- * const signature = await utils.signPayloadWithMultipleECDSA(messageHash, [PRIVATE_KEY1, PRIVATE_KEY2]);
+ * const result = await utils.signPayloadWithMultipleECDSA(typedDataHash, [PRIVATE_KEY1, PRIVATE_KEY2]);
  *
  * @example Sign typed data hash.
  *
  * import { utils } from "zksync-ethers";
- * import { ethers } from "ethers";
+ * import { TypedDataEncoder } from "ethers";
  *
  * const PRIVATE_KEY1 = "<PRIVATE_KEY1>";
  * const PRIVATE_KEY2 = "<PRIVATE_KEY2>";
  *
- * const typedDataHash = ethers.utils._TypedDataEncoder.hash(
+ * const typedDataHash = TypedDataEncoder.hash(
  *   {name: 'Example', version: '1', chainId: 270},
  *   {
  *     Person: [
@@ -118,7 +118,7 @@ exports.signPayloadWithECDSA = signPayloadWithECDSA;
  *   },
  *   {name: 'John', age: 30}
  * );
- * const signature = await utils.signPayloadWithMultipleECDSA(typedDataHash, [PRIVATE_KEY1, PRIVATE_KEY2]);
+ * const result = await utils.signPayloadWithMultipleECDSA(typedDataHash, [PRIVATE_KEY1, PRIVATE_KEY2]);
  */
 const signPayloadWithMultipleECDSA = async (payload, secret) => {
     if (!Array.isArray(secret) || secret.length < 2) {
@@ -127,8 +127,9 @@ const signPayloadWithMultipleECDSA = async (payload, secret) => {
     const signatures = secret.map(key => 
     // Note, that `signMessage` wouldn't work here, since we don't want
     // the signed hash to be prefixed with `\x19Ethereum Signed Message:\n`
-    ethers_1.ethers.utils.joinSignature(new ethers_1.ethers.Wallet(key)._signingKey().signDigest(payload)));
-    return ethers_1.ethers.utils.hexlify(ethers_1.ethers.utils.concat(signatures));
+    ethers_1.ethers.Signature.from(new ethers_1.ethers.Wallet(key).signingKey.sign(payload))
+        .serialized);
+    return ethers_1.ethers.concat(signatures);
 };
 exports.signPayloadWithMultipleECDSA = signPayloadWithMultipleECDSA;
 /**
@@ -140,7 +141,7 @@ exports.signPayloadWithMultipleECDSA = signPayloadWithMultipleECDSA;
  * derived from the ECDSA private key.
  * - Populates `chainId` via `provider.getNetwork()`.
  * - Populates `type` with `utils.EIP712_TX_TYPE`.
- * - Populates `value` by converting to `BigNumber` if set, otherwise to `BigNumber.from(0)`.
+ * - Populates `value` by converting to `bigint` if set, otherwise to `0n`.
  * - Populates `data` with `0x`.
  * - Populates `customData` with `{factoryDeps=[], gasPerPubdata=utils.DEFAULT_GAS_PER_PUBDATA_LIMIT}`.
  *
@@ -169,37 +170,46 @@ exports.signPayloadWithMultipleECDSA = signPayloadWithMultipleECDSA;
  * );
  */
 const populateTransactionECDSA = async (tx, secret, provider) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-    var _l, _m;
+    var _a, _b;
     if (!provider) {
         throw new Error('Provider is required but is not provided!');
     }
     const populatedTx = { ...tx };
     populatedTx.type = utils_1.EIP712_TX_TYPE;
-    (_a = populatedTx.chainId) !== null && _a !== void 0 ? _a : (populatedTx.chainId = (await provider.getNetwork()).chainId);
-    populatedTx.value = populatedTx.value
-        ? ethers_1.BigNumber.from(populatedTx.value)
-        : ethers_1.BigNumber.from(0);
-    (_b = populatedTx.data) !== null && _b !== void 0 ? _b : (populatedTx.data = '0x');
-    (_c = populatedTx.gasPrice) !== null && _c !== void 0 ? _c : (populatedTx.gasPrice = await provider.getGasPrice());
-    populatedTx.customData = (_d = tx.customData) !== null && _d !== void 0 ? _d : {};
-    (_e = (_l = populatedTx.customData).gasPerPubdata) !== null && _e !== void 0 ? _e : (_l.gasPerPubdata = utils_1.DEFAULT_GAS_PER_PUBDATA_LIMIT);
-    (_f = (_m = populatedTx.customData).factoryDeps) !== null && _f !== void 0 ? _f : (_m.factoryDeps = []);
-    if (populatedTx.from) {
-        const isContractAccount = ethers_1.ethers.utils.arrayify(await provider.getCode(populatedTx.from)).length !==
-            0;
+    populatedTx.chainId ?? (populatedTx.chainId = (await provider.getNetwork()).chainId);
+    populatedTx.value = populatedTx.value ? BigInt(populatedTx.value) : 0n;
+    populatedTx.data ?? (populatedTx.data = '0x');
+    populatedTx.customData = tx.customData ?? {};
+    (_a = populatedTx.customData).factoryDeps ?? (_a.factoryDeps = []);
+    populatedTx.from ?? (populatedTx.from = new ethers_1.ethers.Wallet(secret).address);
+    if (populatedTx.gasPrice &&
+        (populatedTx.maxFeePerGas || populatedTx.maxPriorityFeePerGas)) {
+        throw new Error('Provide combination of maxFeePerGas and maxPriorityFeePerGas or provide gasPrice. Not both!');
+    }
+    if (!populatedTx.gasLimit ||
+        (!populatedTx.gasPrice &&
+            (!populatedTx.maxFeePerGas ||
+                populatedTx.maxPriorityFeePerGas === null ||
+                populatedTx.maxPriorityFeePerGas === undefined))) {
+        let fromToUse = populatedTx.from;
+        const isContractAccount = ethers_1.ethers.getBytes(await provider.getCode(populatedTx.from)).length !== 0;
         if (isContractAccount) {
             // Gas estimation does not work when initiator is contract account (works only with EOA).
-            // In order to  estimation gas, the transaction's from value is replaced with signer's address.
-            (_g = populatedTx.gasLimit) !== null && _g !== void 0 ? _g : (populatedTx.gasLimit = await provider.estimateGas({
-                ...populatedTx,
-                from: new ethers_1.ethers.Wallet(secret).address,
-            }));
+            // In order to estimation gas, the transaction's from value is replaced with signer's address.
+            fromToUse = new ethers_1.ethers.Wallet(secret).address;
+        }
+        const fee = await provider.estimateFee({
+            ...populatedTx,
+            from: fromToUse,
+        });
+        populatedTx.gasLimit ?? (populatedTx.gasLimit = fee.gasLimit);
+        (_b = populatedTx.customData).gasPerPubdata ?? (_b.gasPerPubdata = fee.gasPerPubdataLimit);
+        if (!populatedTx.gasPrice) {
+            populatedTx.maxFeePerGas ?? (populatedTx.maxFeePerGas = fee.maxFeePerGas);
+            populatedTx.maxPriorityFeePerGas ?? (populatedTx.maxPriorityFeePerGas = fee.maxPriorityFeePerGas);
         }
     }
-    (_h = populatedTx.from) !== null && _h !== void 0 ? _h : (populatedTx.from = new ethers_1.ethers.Wallet(secret).address);
-    (_j = populatedTx.gasLimit) !== null && _j !== void 0 ? _j : (populatedTx.gasLimit = await provider.estimateGas(populatedTx));
-    (_k = populatedTx.nonce) !== null && _k !== void 0 ? _k : (populatedTx.nonce = await provider.getTransactionCount(populatedTx.from, 'pending'));
+    populatedTx.nonce ?? (populatedTx.nonce = await provider.getTransactionCount(populatedTx.from, 'pending'));
     return populatedTx;
 };
 exports.populateTransactionECDSA = populateTransactionECDSA;
@@ -236,7 +246,7 @@ const populateTransactionMultisigECDSA = async (tx, secret, provider) => {
     if (!Array.isArray(secret) || secret.length < 2) {
         throw new Error('Multiple keys are required to build the transaction!');
     }
-    // populatesTransaction estimates gas which accepts only one address, so the first signer is chosen.
+    // estimates gas accepts only one address, so the first signer is chosen.
     return (0, exports.populateTransactionECDSA)(tx, secret[0], provider);
 };
 exports.populateTransactionMultisigECDSA = populateTransactionMultisigECDSA;

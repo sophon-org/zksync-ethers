@@ -1,136 +1,139 @@
-import { BigNumber, BigNumberish, BytesLike, ethers } from 'ethers';
-import { SignatureLike } from '@ethersproject/bytes';
-import { Address, DeploymentInfo, PriorityOpTree, PriorityQueueType } from './types';
-import { TypedDataDomain, TypedDataField } from '@ethersproject/abstract-signer';
+import { BigNumberish, BytesLike, ethers, SignatureLike } from 'ethers';
+import { Address, DeploymentInfo, EthereumSignature, PriorityOpTree, PriorityQueueType, Transaction, TransactionLike, TransactionReceipt, TransactionRequest } from './types';
 import { Provider } from './provider';
 export * from './paymaster-utils';
 export * from './smart-account-utils';
 export { EIP712_TYPES } from './signer';
 /**
  * The ABI for the `ZKsync` interface.
- * @constant
+ * @readonly
  */
-export declare const ZKSYNC_MAIN_ABI: ethers.utils.Interface;
+export declare const ZKSYNC_MAIN_ABI: ethers.Interface;
 /**
  * The ABI of the `Bridgehub` interface.
- * @constant
+ * @readonly
  */
-export declare const BRIDGEHUB_ABI: ethers.utils.Interface;
+export declare const BRIDGEHUB_ABI: ethers.Interface;
 /**
  * The ABI for the `IContractDeployer` interface, which is utilized for deploying smart contracts.
- * @constant
+ * @readonly
  */
-export declare const CONTRACT_DEPLOYER: ethers.utils.Interface;
+export declare const CONTRACT_DEPLOYER: ethers.Interface;
+/**
+ * The ABI for the `Contract2Factory` interface, which is utilized for deploying smart contracts using CREATE2 and CREATE2ACCOUNT.
+ * @readonly
+ */
+export declare const CONTRACT_2_FACTORY: ethers.Interface;
 /**
  * The ABI for the `IL1Messenger` interface, which is utilized for sending messages from the L2 to L1.
- * @constant
+ * @readonly
  */
-export declare const L1_MESSENGER: ethers.utils.Interface;
+export declare const L1_MESSENGER: ethers.Interface;
 /**
  * The ABI for the `IERC20` interface, which is utilized for interacting with ERC20 tokens.
- * @constant
+ * @readonly
  */
-export declare const IERC20: ethers.utils.Interface;
+export declare const IERC20: ethers.Interface;
 /**
  * The ABI for the `IERC1271` interface, which is utilized for signature validation by contracts.
- * @constant
+ * @readonly
  */
-export declare const IERC1271: ethers.utils.Interface;
+export declare const IERC1271: ethers.Interface;
 /**
  * The ABI for the `IL1Bridge` interface, which is utilized for transferring ERC20 tokens from L1 to L2.
- * @constant
+ * @readonly
  */
-export declare const L1_BRIDGE_ABI: ethers.utils.Interface;
+export declare const L1_BRIDGE_ABI: ethers.Interface;
 /**
  * The ABI for the `IL2Bridge` interface, which is utilized for transferring ERC20 tokens from L2 to L1.
- * @constant
+ * @readonly
  */
-export declare const L2_BRIDGE_ABI: ethers.utils.Interface;
+export declare const L2_BRIDGE_ABI: ethers.Interface;
 /**
  * The ABI for the `INonceHolder` interface, which is utilized for managing deployment nonces.
- * @constant
+ * @readonly
  */
-export declare const NONCE_HOLDER_ABI: ethers.utils.Interface;
+export declare const NONCE_HOLDER_ABI: ethers.Interface;
 /**
  * The address of the L1 `ETH` token.
- * @constant
+ * @readonly
  */
-export declare const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
+export declare const ETH_ADDRESS: Address;
 /**
  * The address of the L1 `ETH` token.
- * @constant
+ * @readonly
  */
-export declare const LEGACY_ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
+export declare const LEGACY_ETH_ADDRESS: Address;
 /**
- * In the contracts the zero address can not be used, use one instead.
- * @constant
+ * In the contracts the zero address can not be used, use one instead
+ * @readonly
  */
-export declare const ETH_ADDRESS_IN_CONTRACTS = "0x0000000000000000000000000000000000000001";
+export declare const ETH_ADDRESS_IN_CONTRACTS: Address;
 /**
  * The formal address for the `Bootloader`.
- * @constant
+ * @readonly
  */
-export declare const BOOTLOADER_FORMAL_ADDRESS = "0x0000000000000000000000000000000000008001";
+export declare const BOOTLOADER_FORMAL_ADDRESS: Address;
 /**
  * The address of the Contract deployer.
- * @constant
+ * @readonly
  */
-export declare const CONTRACT_DEPLOYER_ADDRESS = "0x0000000000000000000000000000000000008006";
+export declare const CONTRACT_DEPLOYER_ADDRESS: Address;
+/**
+ * The address of the Contract2Factory.
+ * @readonly
+ */
+export declare const CONTRACT_2_FACTORY_ADDRESS: Address;
 /**
  * The address of the L1 messenger.
- * @constant
+ * @readonly
  */
-export declare const L1_MESSENGER_ADDRESS = "0x0000000000000000000000000000000000008008";
+export declare const L1_MESSENGER_ADDRESS: Address;
 /**
  * The address of the L2 `ETH` token.
- * @constant
+ * @readonly
  * @deprecated In favor of {@link L2_BASE_TOKEN_ADDRESS}.
  */
-export declare const L2_ETH_TOKEN_ADDRESS = "0x000000000000000000000000000000000000800a";
+export declare const L2_ETH_TOKEN_ADDRESS: Address;
 /**
  * The address of the base token.
- * @constant
+ * @readonly
  */
 export declare const L2_BASE_TOKEN_ADDRESS = "0x000000000000000000000000000000000000800a";
 /**
  * The address of the Nonce holder.
- * @constant
+ * @readonly
  */
-export declare const NONCE_HOLDER_ADDRESS = "0x0000000000000000000000000000000000008003";
-/**
- * The zero hash value.
- * @constant
- */
-export declare const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
+export declare const NONCE_HOLDER_ADDRESS: Address;
 /**
  * Used for applying and undoing aliases on addresses during bridging from L1 to L2.
- * @constant
+ * @readonly
  */
-export declare const L1_TO_L2_ALIAS_OFFSET = "0x1111000000000000000000000000000000001111";
+export declare const L1_TO_L2_ALIAS_OFFSET: Address;
 /**
  * The EIP1271 magic value used for signature validation in smart contracts.
  * This predefined constant serves as a standardized indicator to signal successful
  * signature validation by the contract.
  *
- * @constant
+ * @readonly
  */
 export declare const EIP1271_MAGIC_VALUE = "0x1626ba7e";
 /**
  * Represents an EIP712 transaction type.
  *
- * @constant
+ * @readonly
  */
 export declare const EIP712_TX_TYPE = 113;
 /**
  * Represents a priority transaction operation on L2.
  *
- * @constant
+ * @readonly
  */
 export declare const PRIORITY_OPERATION_L2_TX_TYPE = 255;
 /**
  * The maximum bytecode length in bytes that can be deployed.
  *
- * @constant
+ * @readonly
  */
 export declare const MAX_BYTECODE_LEN_BYTES: number;
 /**
@@ -139,30 +142,30 @@ export declare const MAX_BYTECODE_LEN_BYTES: number;
  * This constant is part of a coefficient calculation to adjust the gas limit to account for variations
  * in the SDK estimation, ensuring the transaction will be accepted.
  *
- * @constant
+ * @readonly
  */
-export declare const L1_FEE_ESTIMATION_COEF_NUMERATOR: BigNumber;
+export declare const L1_FEE_ESTIMATION_COEF_NUMERATOR = 12;
 /**
  * Denominator used in scaling the gas limit to ensure acceptance of `L1->L2` transactions.
  *
  * This constant is part of a coefficient calculation to adjust the gas limit to account for variations
  * in the SDK estimation, ensuring the transaction will be accepted.
  *
- * @constant
+ * @readonly
  */
-export declare const L1_FEE_ESTIMATION_COEF_DENOMINATOR: BigNumber;
+export declare const L1_FEE_ESTIMATION_COEF_DENOMINATOR = 10;
 /**
  * Gas limit used for displaying the error messages when the
  * users do not have enough fee when depositing ERC20 token from L1 to L2.
  *
- * @constant
+ * @readonly
  */
 export declare const L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 400000;
 /**
  * Gas limit used for displaying the error messages when the
  * users do not have enough fee when depositing `ETH` token from L1 to L2.
  *
- * @constant
+ * @readonly
  */
 export declare const L1_RECOMMENDED_MIN_ETH_DEPOSIT_GAS_LIMIT = 200000;
 /**
@@ -170,13 +173,13 @@ export declare const L1_RECOMMENDED_MIN_ETH_DEPOSIT_GAS_LIMIT = 200000;
  * This value is utilized when inserting a default value for type 2
  * and EIP712 type transactions.
  *
- * @constant
+ * @readonly
  */
 export declare const DEFAULT_GAS_PER_PUBDATA_LIMIT = 50000;
 /**
  * The `L1->L2` transactions are required to have the following gas per pubdata byte.
  *
- * @constant
+ * @readonly
  */
 export declare const REQUIRED_L1_TO_L2_GAS_PER_PUBDATA_LIMIT = 800;
 /**
@@ -243,7 +246,7 @@ export declare function getHashedL2ToL1Msg(sender: Address, msg: BytesLike, txNu
  * const receipt = await provider.getTransactionReceipt(deployTx);
  * const deploymentInfo = utils.getDeployedContracts(receipt as ethers.TransactionReceipt);
  */
-export declare function getDeployedContracts(receipt: ethers.providers.TransactionReceipt): DeploymentInfo[];
+export declare function getDeployedContracts(receipt: TransactionReceipt): DeploymentInfo[];
 /**
  * Generates a future-proof contract address using a salt plus bytecode, allowing the determination of an address before deployment.
  *
@@ -287,7 +290,7 @@ export declare function createAddress(sender: Address, senderNonce: BigNumberish
  *
  * import { utils } from "zksync-ethers";
  *
- * const baseCost = BigNumber.from(100);
+ * const baseCost = 100;
  * const value = 99;
  * try {
  *   await utils.checkBaseCost(baseCost, value);
@@ -295,7 +298,7 @@ export declare function createAddress(sender: Address, senderNonce: BigNumberish
  *   // e.message = `The base cost of performing the priority operation is higher than the provided value parameter for the transaction: baseCost: ${baseCost}, provided value: ${value}`,
  * }
  */
-export declare function checkBaseCost(baseCost: ethers.BigNumber, value: ethers.BigNumberish | Promise<ethers.BigNumberish>): Promise<void>;
+export declare function checkBaseCost(baseCost: ethers.BigNumberish, value: ethers.BigNumberish | Promise<ethers.BigNumberish>): Promise<void>;
 /**
  * Serializes an EIP712 transaction and includes a signature if provided.
  *
@@ -310,7 +313,7 @@ export declare function checkBaseCost(baseCost: ethers.BigNumber, value: ethers.
  *
  * import { utils } from "zksync-ethers";
  *
- * const serializedTx = utils.serialize({ chainId: 270, from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049" }, null);
+ * const serializedTx = utils.serializeEip712({ chainId: 270, from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049" }, null);
  *
  * // serializedTx = "0x71ea8080808080808082010e808082010e9436615cf349d7f6344891b1e7ca7c72883f5dc04982c350c080c0"
  *
@@ -319,9 +322,9 @@ export declare function checkBaseCost(baseCost: ethers.BigNumber, value: ethers.
  * import { utils } from "zksync-ethers";
  * import { ethers } from "ethers";
  *
- * const signature = ethers.utils.splitSignature("0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a");
+ * const signature = ethers.Signature.from("0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a");
  *
- * const serializedTx = utils.serialize(
+ * const serializedTx = utils.serializeEip712(
  *   {
  *     chainId: 270,
  *     from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
@@ -332,7 +335,7 @@ export declare function checkBaseCost(baseCost: ethers.BigNumber, value: ethers.
  * );
  * // serializedTx = "0x71f87f8080808094a61464658afeaf65cccaafd3a512b69a83b77618830f42408001a073a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aa02f87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a82010e9436615cf349d7f6344891b1e7ca7c72883f5dc04982c350c080c0"
  */
-export declare function serialize(transaction: ethers.providers.TransactionRequest, signature?: SignatureLike): string;
+export declare function serializeEip712(transaction: TransactionLike, signature?: ethers.SignatureLike): string;
 /**
  * Returns the hash of the given bytecode.
  *
@@ -365,30 +368,90 @@ export declare function hashBytecode(bytecode: ethers.BytesLike): Uint8Array;
  *
  * const serializedTx =
  *   "0x71f87f8080808094a61464658afeaf65cccaafd3a512b69a83b77618830f42408001a073a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aa02f87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a82010e9436615cf349d7f6344891b1e7ca7c72883f5dc04982c350c080c0";
- * const tx: types.TransactionLike = utils.parseTransaction(serializedTx);
+ * const tx: types.TransactionLike = utils.parseEip712(serializedTx);
  * /*
- * const tx = {
- *     type: 113,
- *     nonce: 0,
- *     maxPriorityFeePerGas: BigNumber.from(0),
- *     maxFeePerGas: BigNumber.from(0),
- *     gasLimit: BigNumber.from(0),
- *     to: RECEIVER,
- *     value: BigNumber.from(1000000),
- *     data: '0x',
- *     chainId: 270,
- *     from: ADDRESS,
- *     customData: {
- *     gasPerPubdata: BigNumber.from(50000),
+ * tx: types.TransactionLike = {
+ *   type: 113,
+ *   nonce: 0,
+ *   maxPriorityFeePerGas: 0n,
+ *   maxFeePerGas: 0n,
+ *   gasLimit: 0n,
+ *   to: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
+ *   value: 1000000n,
+ *   data: "0x",
+ *   chainId: 270n,
+ *   from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
+ *   customData: {
+ *     gasPerPubdata: 50000n,
  *     factoryDeps: [],
- *     customSignature: '0x',
- *     paymasterParams: undefined,
+ *     customSignature: "0x",
+ *     paymasterParams: null,
  *   },
- *   hash: '0x9ed410ce33179ac1ff6b721060605afc72d64febfe0c08cacab5a246602131ee',
+ *   hash: "0x9ed410ce33179ac1ff6b721060605afc72d64febfe0c08cacab5a246602131ee",
  * };
  * *\/
  */
-export declare function parseTransaction(payload: ethers.BytesLike): ethers.Transaction;
+export declare function parseEip712(payload: ethers.BytesLike): TransactionLike;
+/**
+ * Returns the hash of an EIP712 transaction. If a custom signature is provided in the transaction,
+ * it will be used to form the transaction hash. Otherwise, the Ethereum signature specified in the
+ * `ethSignature` parameter will be used.
+ *
+ * @param transaction The EIP712 transaction that may contain a custom signature.
+ * If a custom signature is not present in the transaction, the `ethSignature` parameter will be used.
+ * @param [ethSignature] The Ethereum transaction signature. This parameter is ignored if the transaction
+ * object contains a custom signature.
+ *
+ * @example Get transaction hash using custom signature from the transaction.
+ *
+ * import { utils } from "zksync-ethers";
+ *
+ * const tx: types.TransactionRequest = {
+ *   type: 113,
+ *   nonce: 0,
+ *   maxPriorityFeePerGas: 0n,
+ *   maxFeePerGas: 0n,
+ *   gasLimit: 0n,
+ *   to: '0xa61464658AfeAf65CccaaFD3a512b69A83B77618',
+ *   value: 1_000_000n,
+ *   data: '0x',
+ *   chainId: 270n,
+ *   from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
+ *   customData: {
+ *     gasPerPubdata: 50_000n,
+ *     factoryDeps: [],
+ *     customSignature:
+ *       '0x307837373262396162343735386435636630386637643732303161646332653534383933616532376263666562323162396337643666643430393766346464653063303166376630353332323866346636643838653662663334333436343931343135363761633930363632306661653832633239333339393062353563613336363162',
+ *     paymasterParams: {
+ *       paymaster: '0xa222f0c183AFA73a8Bc1AFb48D34C88c9Bf7A174',
+ *       paymasterInput: ethers.getBytes(
+ *         '0x949431dc000000000000000000000000841c43fa5d8fffdb9efe3358906f7578d8700dd4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000'
+ *       ),
+ *     },
+ *   },
+ * };
+ *
+ * const hash = utils.eip712TxHash(tx);
+ * // hash = '0xc0ba55587423e1ef281b06a9d684b481365897f37a6ad611d7619b1b7e0bc908'
+ *
+ * @example Get transaction hash using Ethereum signature.
+ *
+ * import { utils } from "zksync-ethers";
+ * import { ethers } from "ethers";
+ *
+ * const tx: types.TransactionRequest = {
+ *   chainId: 270n,
+ *   from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
+ *   to: '0xa61464658AfeAf65CccaaFD3a512b69A83B77618',
+ *   value: 1_000_000n,
+ * };
+ * const signature = ethers.Signature.from(
+ *   '0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a'
+ * );
+ * const hash = utils.eip712TxHash(tx, signature);
+ * // hash = '0x8efdc7ce5f5a75ab945976c3e2b0c2a45e9f8e15ff940d05625ac5545cd9f870'
+ */
+export declare function eip712TxHash(transaction: Transaction | TransactionRequest, ethSignature?: EthereumSignature): string;
 /**
  * Returns the hash of the L2 priority operation from a given transaction receipt and L2 address.
  *
@@ -411,7 +474,7 @@ export declare function parseTransaction(payload: ethers.BytesLike): ethers.Tran
  *   );
  * }
  */
-export declare function getL2HashFromPriorityOp(txReceipt: ethers.providers.TransactionReceipt, zkSyncAddress: Address): string;
+export declare function getL2HashFromPriorityOp(txReceipt: ethers.TransactionReceipt, zkSyncAddress: Address): string;
 /**
  * Converts the address that submitted a transaction to the inbox on L1 to the `msg.sender` viewed on L2.
  * Returns the `msg.sender` of the `L1->L2` transaction as the address of the contract that initiated the transaction.
@@ -470,7 +533,7 @@ export declare function undoL1ToL2Alias(address: string): string;
  *
  * const calldata = await utils.getERC20DefaultBridgeData(tokenL1, ethProvider);
  */
-export declare function getERC20DefaultBridgeData(l1TokenAddress: string, provider: ethers.providers.Provider): Promise<string>;
+export declare function getERC20DefaultBridgeData(l1TokenAddress: string, provider: ethers.Provider): Promise<string>;
 /**
  * Returns the calldata sent by an L1 ERC20 bridge to its L2 counterpart during token bridging.
  *
@@ -534,7 +597,7 @@ export declare function getERC20BridgeCalldata(l1TokenAddress: string, l1Sender:
  * const isValidSignature = await utils.isMessageSignatureCorrect(provider, ADDRESS, message, signature);
  * // isValidSignature = true
  */
-export declare function isMessageSignatureCorrect(provider: Provider, address: string, message: ethers.Bytes | string, signature: SignatureLike): Promise<boolean>;
+export declare function isMessageSignatureCorrect(provider: Provider, address: string, message: Uint8Array | string, signature: SignatureLike): Promise<boolean>;
 /**
  * Returns whether the account abstraction EIP712 signature is correct.
  *
@@ -548,6 +611,7 @@ export declare function isMessageSignatureCorrect(provider: Provider, address: s
  * @example
  *
  * import { Wallet, utils, Provider, EIP712Signer } from "zksync-ethers";
+ * import { ethers } from "ethers";
  *
  * const ADDRESS = "<WALLET_ADDRESS>";
  * const PRIVATE_KEY = "<WALLET_PRIVATE_KEY>";
@@ -558,7 +622,7 @@ export declare function isMessageSignatureCorrect(provider: Provider, address: s
  *   chainId: 270,
  *   from: ADDRESS,
  *   to: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
- *   value: BigNumber.from(7_000_000),
+ *   value: 7_000_000n,
  * };
  *
  * const eip712Signer = new EIP712Signer(
@@ -578,8 +642,10 @@ export declare function isMessageSignatureCorrect(provider: Provider, address: s
  * );
  * // isValidSignature = true
  */
-export declare function isTypedDataSignatureCorrect(provider: Provider, address: string, domain: TypedDataDomain, types: Record<string, Array<TypedDataField>>, value: Record<string, any>, signature: SignatureLike): Promise<boolean>;
+export declare function isTypedDataSignatureCorrect(provider: Provider, address: string, domain: ethers.TypedDataDomain, types: Record<string, Array<ethers.TypedDataField>>, value: Record<string, any>, signature: SignatureLike): Promise<boolean>;
 /**
+ * @deprecated In favor of {@link provider.estimateDefaultBridgeDepositL2Gas}
+ *
  * Returns an estimation of the L2 gas required for token bridging via the default ERC20 bridge.
  *
  * @param providerL1 The Ethers provider for the L1 network.
@@ -589,9 +655,6 @@ export declare function isTypedDataSignatureCorrect(provider: Provider, address:
  * @param to The recipient address on the L2 network.
  * @param from The sender address on the L1 network.
  * @param gasPerPubdataByte The current gas per byte of pubdata.
- *
- * @see
- * {@link https://docs.zksync.io/build/developer-reference/bridging-asset.html#default-bridges Default bridges documentation}.
  *
  * @example
  *
@@ -607,7 +670,7 @@ export declare function isTypedDataSignatureCorrect(provider: Provider, address:
  * const from = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049";
  * const gasPerPubdataByte = utils.REQUIRED_L1_TO_L2_GAS_PER_PUBDATA_LIMIT;
  *
- * const gas = await utils.estimateCustomBridgeDepositL2Gas(
+ * const gas = await utils.estimateDefaultBridgeDepositL2Gas(
  *   ethProvider,
  *   provider,
  *   token,
@@ -618,7 +681,7 @@ export declare function isTypedDataSignatureCorrect(provider: Provider, address:
  * );
  * // gas = 355_704
  */
-export declare function estimateDefaultBridgeDepositL2Gas(providerL1: ethers.providers.Provider, providerL2: Provider, token: Address, amount: BigNumberish, to: Address, from?: Address, gasPerPubdataByte?: BigNumberish): Promise<BigNumber>;
+export declare function estimateDefaultBridgeDepositL2Gas(providerL1: ethers.Provider, providerL2: Provider, token: Address, amount: BigNumberish, to: Address, from?: Address, gasPerPubdataByte?: BigNumberish): Promise<bigint>;
 /**
  * Scales the provided gas limit using a coefficient to ensure acceptance of L1->L2 transactions.
  *
@@ -634,8 +697,10 @@ export declare function estimateDefaultBridgeDepositL2Gas(providerL1: ethers.pro
  * const scaledGasLimit = utils.scaleGasLimit(10_000);
  * // scaledGasLimit = 12_000
  */
-export declare function scaleGasLimit(gasLimit: BigNumber): BigNumber;
+export declare function scaleGasLimit(gasLimit: bigint): bigint;
 /**
+ * @deprecated In favor of {@link provider.estimateCustomBridgeDepositL2Gas}
+ *
  * Returns an estimation of the L2 gas required for token bridging via the custom ERC20 bridge.
  *
  * @param providerL2 The ZKsync provider for the L2 network.
@@ -648,9 +713,6 @@ export declare function scaleGasLimit(gasLimit: BigNumber): BigNumber;
  * @param from The sender address on the L1 network.
  * @param gasPerPubdataByte The current gas per byte of pubdata.
  * @param l2Value The `msg.value` of L2 transaction.
- *
- * @see
- * {@link https://docs.zksync.io/build/developer-reference/bridging-asset.html#custom-bridges-on-l1-and-l2 Custom bridges documentation}.
  *
  * @example
  *
@@ -689,7 +751,7 @@ export declare function scaleGasLimit(gasLimit: BigNumber): BigNumber;
  * );
  * // gas = 683_830
  */
-export declare function estimateCustomBridgeDepositL2Gas(providerL2: Provider, l1BridgeAddress: Address, l2BridgeAddress: Address, token: Address, amount: BigNumberish, to: Address, bridgeData: BytesLike, from?: Address, gasPerPubdataByte?: BigNumberish, l2Value?: BigNumberish): Promise<BigNumber>;
+export declare function estimateCustomBridgeDepositL2Gas(providerL2: Provider, l1BridgeAddress: Address, l2BridgeAddress: Address, token: Address, amount: BigNumberish, to: Address, bridgeData: BytesLike, from: Address, gasPerPubdataByte?: BigNumberish, l2Value?: BigNumberish): Promise<bigint>;
 /**
  * Creates a JSON string from an object, including support for serializing bigint types.
  *
@@ -699,7 +761,7 @@ export declare function estimateCustomBridgeDepositL2Gas(providerL2: Provider, l
  *
  * import { utils } from "zksync-ethers";
  *
- * const json = utils.toJSON({gasLimit: BigNumber.from(1_000)})
+ * const json = utils.toJSON({gasLimit: 1_000n})
  * // {"gasLimit": 1000}
  */
 export declare function toJSON(object: any): string;
