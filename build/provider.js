@@ -251,8 +251,8 @@ function JsonRpcApiProvider(ProviderType) {
          * Calls the {@link https://docs.zksync.io/build/api.html#zks-getbridgehubcontract zks_getBridgehubContract} JSON-RPC method.
          */
         async getBridgehubContractAddress() {
-            this.contractAddresses.bridgehubContract =
-              '0xC97F5f2FDE4fe6e220069F8D3718bE4FaC7C00f0';
+            this.contractAddresses().bridgehubContract =
+                '0xC97F5f2FDE4fe6e220069F8D3718bE4FaC7C00f0';
             if (!this.contractAddresses().bridgehubContract) {
                 this.contractAddresses().bridgehubContract = await this.send('zks_getBridgehubContract', []);
             }
