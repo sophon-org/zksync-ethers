@@ -386,6 +386,8 @@ export function JsonRpcApiProvider<
      * Calls the {@link https://docs.zksync.io/build/api.html#zks-getbridgehubcontract zks_getBridgehubContract} JSON-RPC method.
      */
     async getBridgehubContractAddress(): Promise<Address> {
+      this.contractAddresses.bridgehubContract =
+        '0x91951F0903381C24E02c0fd0470694a8a3dd63cF';
       if (!this.contractAddresses().bridgehubContract) {
         this.contractAddresses().bridgehubContract = await this.send(
           'zks_getBridgehubContract',
