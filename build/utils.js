@@ -17,125 +17,130 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.estimateDefaultBridgeDepositL2Gas = exports.isTypedDataSignatureCorrect = exports.isMessageSignatureCorrect = exports.getERC20BridgeCalldata = exports.getERC20DefaultBridgeData = exports.undoL1ToL2Alias = exports.applyL1ToL2Alias = exports.getL2HashFromPriorityOp = exports.parseTransaction = exports.hashBytecode = exports.serialize = exports.checkBaseCost = exports.createAddress = exports.create2Address = exports.getDeployedContracts = exports.getHashedL2ToL1Msg = exports.layer1TxDefaults = exports.sleep = exports.isETH = exports.REQUIRED_L1_TO_L2_GAS_PER_PUBDATA_LIMIT = exports.DEFAULT_GAS_PER_PUBDATA_LIMIT = exports.L1_RECOMMENDED_MIN_ETH_DEPOSIT_GAS_LIMIT = exports.L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR = exports.L1_FEE_ESTIMATION_COEF_NUMERATOR = exports.MAX_BYTECODE_LEN_BYTES = exports.PRIORITY_OPERATION_L2_TX_TYPE = exports.EIP712_TX_TYPE = exports.EIP1271_MAGIC_VALUE = exports.L1_TO_L2_ALIAS_OFFSET = exports.ZERO_HASH = exports.NONCE_HOLDER_ADDRESS = exports.L2_BASE_TOKEN_ADDRESS = exports.L2_ETH_TOKEN_ADDRESS = exports.L1_MESSENGER_ADDRESS = exports.CONTRACT_DEPLOYER_ADDRESS = exports.BOOTLOADER_FORMAL_ADDRESS = exports.ETH_ADDRESS_IN_CONTRACTS = exports.LEGACY_ETH_ADDRESS = exports.ETH_ADDRESS = exports.NONCE_HOLDER_ABI = exports.L2_BRIDGE_ABI = exports.L1_BRIDGE_ABI = exports.IERC1271 = exports.IERC20 = exports.L1_MESSENGER = exports.CONTRACT_DEPLOYER = exports.BRIDGEHUB_ABI = exports.ZKSYNC_MAIN_ABI = exports.EIP712_TYPES = void 0;
-exports.isAddressEq = exports.toJSON = exports.estimateCustomBridgeDepositL2Gas = exports.scaleGasLimit = void 0;
+exports.isMessageSignatureCorrect = exports.getERC20BridgeCalldata = exports.getERC20DefaultBridgeData = exports.undoL1ToL2Alias = exports.applyL1ToL2Alias = exports.getL2HashFromPriorityOp = exports.eip712TxHash = exports.parseEip712 = exports.hashBytecode = exports.serializeEip712 = exports.checkBaseCost = exports.createAddress = exports.create2Address = exports.getDeployedContracts = exports.getHashedL2ToL1Msg = exports.layer1TxDefaults = exports.sleep = exports.isETH = exports.REQUIRED_L1_TO_L2_GAS_PER_PUBDATA_LIMIT = exports.DEFAULT_GAS_PER_PUBDATA_LIMIT = exports.L1_RECOMMENDED_MIN_ETH_DEPOSIT_GAS_LIMIT = exports.L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR = exports.L1_FEE_ESTIMATION_COEF_NUMERATOR = exports.MAX_BYTECODE_LEN_BYTES = exports.PRIORITY_OPERATION_L2_TX_TYPE = exports.EIP712_TX_TYPE = exports.EIP1271_MAGIC_VALUE = exports.L1_TO_L2_ALIAS_OFFSET = exports.NONCE_HOLDER_ADDRESS = exports.L2_BASE_TOKEN_ADDRESS = exports.L2_ETH_TOKEN_ADDRESS = exports.L1_MESSENGER_ADDRESS = exports.CONTRACT_2_FACTORY_ADDRESS = exports.CONTRACT_DEPLOYER_ADDRESS = exports.BOOTLOADER_FORMAL_ADDRESS = exports.ETH_ADDRESS_IN_CONTRACTS = exports.LEGACY_ETH_ADDRESS = exports.ETH_ADDRESS = exports.NONCE_HOLDER_ABI = exports.L2_BRIDGE_ABI = exports.L1_BRIDGE_ABI = exports.IERC1271 = exports.IERC20 = exports.L1_MESSENGER = exports.CONTRACT_2_FACTORY = exports.CONTRACT_DEPLOYER = exports.BRIDGEHUB_ABI = exports.ZKSYNC_MAIN_ABI = exports.EIP712_TYPES = void 0;
+exports.isAddressEq = exports.toJSON = exports.estimateCustomBridgeDepositL2Gas = exports.scaleGasLimit = exports.estimateDefaultBridgeDepositL2Gas = exports.isTypedDataSignatureCorrect = void 0;
 const ethers_1 = require("ethers");
 const types_1 = require("./types");
 const signer_1 = require("./signer");
-const Ierc20Factory_1 = require("./typechain/Ierc20Factory");
-const utils_1 = require("ethers/lib/utils");
-__exportStar(require("./paymaster-utils"), exports);
-__exportStar(require("./smart-account-utils"), exports);
-var signer_2 = require("./signer");
-Object.defineProperty(exports, "EIP712_TYPES", { enumerable: true, get: function () { return signer_2.EIP712_TYPES; } });
+const typechain_1 = require("./typechain");
 const IZkSyncHyperchain_json_1 = __importDefault(require("../abi/IZkSyncHyperchain.json"));
 const IBridgehub_json_1 = __importDefault(require("../abi/IBridgehub.json"));
 const IContractDeployer_json_1 = __importDefault(require("../abi/IContractDeployer.json"));
+const Contract2Factory_json_1 = __importDefault(require("../abi/Contract2Factory.json"));
 const IL1Messenger_json_1 = __importDefault(require("../abi/IL1Messenger.json"));
 const IERC20_json_1 = __importDefault(require("../abi/IERC20.json"));
 const IERC1271_json_1 = __importDefault(require("../abi/IERC1271.json"));
 const IL1ERC20Bridge_json_1 = __importDefault(require("../abi/IL1ERC20Bridge.json"));
 const IL2Bridge_json_1 = __importDefault(require("../abi/IL2Bridge.json"));
 const INonceHolder_json_1 = __importDefault(require("../abi/INonceHolder.json"));
+__exportStar(require("./paymaster-utils"), exports);
+__exportStar(require("./smart-account-utils"), exports);
+var signer_2 = require("./signer");
+Object.defineProperty(exports, "EIP712_TYPES", { enumerable: true, get: function () { return signer_2.EIP712_TYPES; } });
 /**
  * The ABI for the `ZKsync` interface.
- * @constant
+ * @readonly
  */
-exports.ZKSYNC_MAIN_ABI = new ethers_1.utils.Interface(IZkSyncHyperchain_json_1.default);
+exports.ZKSYNC_MAIN_ABI = new ethers_1.ethers.Interface(IZkSyncHyperchain_json_1.default);
 /**
  * The ABI of the `Bridgehub` interface.
- * @constant
+ * @readonly
  */
-exports.BRIDGEHUB_ABI = new ethers_1.utils.Interface(IBridgehub_json_1.default);
+exports.BRIDGEHUB_ABI = new ethers_1.ethers.Interface(IBridgehub_json_1.default);
 /**
  * The ABI for the `IContractDeployer` interface, which is utilized for deploying smart contracts.
- * @constant
+ * @readonly
  */
-exports.CONTRACT_DEPLOYER = new ethers_1.utils.Interface(IContractDeployer_json_1.default);
+exports.CONTRACT_DEPLOYER = new ethers_1.ethers.Interface(IContractDeployer_json_1.default);
+/**
+ * The ABI for the `Contract2Factory` interface, which is utilized for deploying smart contracts using CREATE2 and CREATE2ACCOUNT.
+ * @readonly
+ */
+exports.CONTRACT_2_FACTORY = new ethers_1.ethers.Interface(Contract2Factory_json_1.default);
 /**
  * The ABI for the `IL1Messenger` interface, which is utilized for sending messages from the L2 to L1.
- * @constant
+ * @readonly
  */
-exports.L1_MESSENGER = new ethers_1.utils.Interface(IL1Messenger_json_1.default);
+exports.L1_MESSENGER = new ethers_1.ethers.Interface(IL1Messenger_json_1.default);
 /**
  * The ABI for the `IERC20` interface, which is utilized for interacting with ERC20 tokens.
- * @constant
+ * @readonly
  */
-exports.IERC20 = new ethers_1.utils.Interface(IERC20_json_1.default);
+exports.IERC20 = new ethers_1.ethers.Interface(IERC20_json_1.default);
 /**
  * The ABI for the `IERC1271` interface, which is utilized for signature validation by contracts.
- * @constant
+ * @readonly
  */
-exports.IERC1271 = new ethers_1.utils.Interface(IERC1271_json_1.default);
+exports.IERC1271 = new ethers_1.ethers.Interface(IERC1271_json_1.default);
 /**
  * The ABI for the `IL1Bridge` interface, which is utilized for transferring ERC20 tokens from L1 to L2.
- * @constant
+ * @readonly
  */
-exports.L1_BRIDGE_ABI = new ethers_1.utils.Interface(IL1ERC20Bridge_json_1.default);
+exports.L1_BRIDGE_ABI = new ethers_1.ethers.Interface(IL1ERC20Bridge_json_1.default);
 /**
  * The ABI for the `IL2Bridge` interface, which is utilized for transferring ERC20 tokens from L2 to L1.
- * @constant
+ * @readonly
  */
-exports.L2_BRIDGE_ABI = new ethers_1.utils.Interface(IL2Bridge_json_1.default);
+exports.L2_BRIDGE_ABI = new ethers_1.ethers.Interface(IL2Bridge_json_1.default);
 /**
  * The ABI for the `INonceHolder` interface, which is utilized for managing deployment nonces.
- * @constant
+ * @readonly
  */
-exports.NONCE_HOLDER_ABI = new ethers_1.utils.Interface(INonceHolder_json_1.default);
+exports.NONCE_HOLDER_ABI = new ethers_1.ethers.Interface(INonceHolder_json_1.default);
 /**
  * The address of the L1 `ETH` token.
- * @constant
+ * @readonly
  */
 exports.ETH_ADDRESS = '0x0000000000000000000000000000000000000000';
 /**
  * The address of the L1 `ETH` token.
- * @constant
+ * @readonly
  */
 exports.LEGACY_ETH_ADDRESS = '0x0000000000000000000000000000000000000000';
 /**
- * In the contracts the zero address can not be used, use one instead.
- * @constant
+ * In the contracts the zero address can not be used, use one instead
+ * @readonly
  */
 exports.ETH_ADDRESS_IN_CONTRACTS = '0x0000000000000000000000000000000000000001';
 /**
  * The formal address for the `Bootloader`.
- * @constant
+ * @readonly
  */
 exports.BOOTLOADER_FORMAL_ADDRESS = '0x0000000000000000000000000000000000008001';
 /**
  * The address of the Contract deployer.
- * @constant
+ * @readonly
  */
 exports.CONTRACT_DEPLOYER_ADDRESS = '0x0000000000000000000000000000000000008006';
 /**
+ * The address of the Contract2Factory.
+ * @readonly
+ */
+exports.CONTRACT_2_FACTORY_ADDRESS = '0x0000000000000000000000000000000000010000';
+/**
  * The address of the L1 messenger.
- * @constant
+ * @readonly
  */
 exports.L1_MESSENGER_ADDRESS = '0x0000000000000000000000000000000000008008';
 /**
  * The address of the L2 `ETH` token.
- * @constant
+ * @readonly
  * @deprecated In favor of {@link L2_BASE_TOKEN_ADDRESS}.
  */
 exports.L2_ETH_TOKEN_ADDRESS = '0x000000000000000000000000000000000000800a';
 /**
  * The address of the base token.
- * @constant
+ * @readonly
  */
 exports.L2_BASE_TOKEN_ADDRESS = '0x000000000000000000000000000000000000800a';
 /**
  * The address of the Nonce holder.
- * @constant
+ * @readonly
  */
 exports.NONCE_HOLDER_ADDRESS = '0x0000000000000000000000000000000000008003';
 /**
- * The zero hash value.
- * @constant
- */
-exports.ZERO_HASH = '0x0000000000000000000000000000000000000000000000000000000000000000';
-/**
  * Used for applying and undoing aliases on addresses during bridging from L1 to L2.
- * @constant
+ * @readonly
  */
 exports.L1_TO_L2_ALIAS_OFFSET = '0x1111000000000000000000000000000000001111';
 /**
@@ -143,25 +148,25 @@ exports.L1_TO_L2_ALIAS_OFFSET = '0x1111000000000000000000000000000000001111';
  * This predefined constant serves as a standardized indicator to signal successful
  * signature validation by the contract.
  *
- * @constant
+ * @readonly
  */
 exports.EIP1271_MAGIC_VALUE = '0x1626ba7e';
 /**
  * Represents an EIP712 transaction type.
  *
- * @constant
+ * @readonly
  */
 exports.EIP712_TX_TYPE = 0x71;
 /**
  * Represents a priority transaction operation on L2.
  *
- * @constant
+ * @readonly
  */
 exports.PRIORITY_OPERATION_L2_TX_TYPE = 0xff;
 /**
  * The maximum bytecode length in bytes that can be deployed.
  *
- * @constant
+ * @readonly
  */
 exports.MAX_BYTECODE_LEN_BYTES = ((1 << 16) - 1) * 32;
 /**
@@ -170,30 +175,30 @@ exports.MAX_BYTECODE_LEN_BYTES = ((1 << 16) - 1) * 32;
  * This constant is part of a coefficient calculation to adjust the gas limit to account for variations
  * in the SDK estimation, ensuring the transaction will be accepted.
  *
- * @constant
+ * @readonly
  */
-exports.L1_FEE_ESTIMATION_COEF_NUMERATOR = ethers_1.BigNumber.from(12);
+exports.L1_FEE_ESTIMATION_COEF_NUMERATOR = 12;
 /**
  * Denominator used in scaling the gas limit to ensure acceptance of `L1->L2` transactions.
  *
  * This constant is part of a coefficient calculation to adjust the gas limit to account for variations
  * in the SDK estimation, ensuring the transaction will be accepted.
  *
- * @constant
+ * @readonly
  */
-exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR = ethers_1.BigNumber.from(10);
+exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR = 10;
 /**
  * Gas limit used for displaying the error messages when the
  * users do not have enough fee when depositing ERC20 token from L1 to L2.
  *
- * @constant
+ * @readonly
  */
 exports.L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 400000;
 /**
  * Gas limit used for displaying the error messages when the
  * users do not have enough fee when depositing `ETH` token from L1 to L2.
  *
- * @constant
+ * @readonly
  */
 exports.L1_RECOMMENDED_MIN_ETH_DEPOSIT_GAS_LIMIT = 200000;
 /**
@@ -201,14 +206,14 @@ exports.L1_RECOMMENDED_MIN_ETH_DEPOSIT_GAS_LIMIT = 200000;
  * This value is utilized when inserting a default value for type 2
  * and EIP712 type transactions.
  *
- * @constant
+ * @readonly
  */
 // It is a realistic value, but it is large enough to fill into any batch regardless of the pubdata price.
 exports.DEFAULT_GAS_PER_PUBDATA_LIMIT = 50000;
 /**
  * The `L1->L2` transactions are required to have the following gas per pubdata byte.
  *
- * @constant
+ * @readonly
  */
 exports.REQUIRED_L1_TO_L2_GAS_PER_PUBDATA_LIMIT = 800;
 /**
@@ -274,12 +279,12 @@ function getHashedL2ToL1Msg(sender, msg, txNumberInBlock) {
     const encodedMsg = new Uint8Array([
         0, // l2ShardId
         1, // isService
-        ...ethers_1.ethers.utils.zeroPad(ethers_1.ethers.utils.hexlify(txNumberInBlock), 2),
-        ...ethers_1.ethers.utils.arrayify(exports.L1_MESSENGER_ADDRESS),
-        ...ethers_1.ethers.utils.zeroPad(sender, 32),
-        ...ethers_1.ethers.utils.arrayify(ethers_1.ethers.utils.keccak256(msg)),
+        ...ethers_1.ethers.getBytes(ethers_1.ethers.toBeHex(txNumberInBlock, 2)),
+        ...ethers_1.ethers.getBytes(exports.L1_MESSENGER_ADDRESS),
+        ...ethers_1.ethers.getBytes(ethers_1.ethers.zeroPadValue(sender, 32)),
+        ...ethers_1.ethers.getBytes(ethers_1.ethers.keccak256(msg)),
     ]);
-    return ethers_1.ethers.utils.keccak256(encodedMsg);
+    return ethers_1.ethers.keccak256(encodedMsg);
 }
 exports.getHashedL2ToL1Msg = getHashedL2ToL1Msg;
 /**
@@ -301,7 +306,7 @@ function getDeployedContracts(receipt) {
     const addressBytesLen = 40;
     return (receipt.logs
         .filter(log => log.topics[0] ===
-        ethers_1.utils.id('ContractDeployed(address,bytes32,address)') &&
+        ethers_1.ethers.id('ContractDeployed(address,bytes32,address)') &&
         isAddressEq(log.address, exports.CONTRACT_DEPLOYER_ADDRESS))
         // Take the last topic (deployed contract address as U256) and extract address from it (U160).
         .map(log => {
@@ -309,9 +314,9 @@ function getDeployedContracts(receipt) {
         const bytecodeHash = log.topics[2];
         const address = `0x${log.topics[3].slice(log.topics[3].length - addressBytesLen)}`;
         return {
-            sender: ethers_1.utils.getAddress(sender),
+            sender: ethers_1.ethers.getAddress(sender),
             bytecodeHash: bytecodeHash,
-            deployedAddress: ethers_1.utils.getAddress(address),
+            deployedAddress: ethers_1.ethers.getAddress(address),
         };
     }));
 }
@@ -334,18 +339,18 @@ exports.getDeployedContracts = getDeployedContracts;
  * // address = "0x29bac3E5E8FFE7415F97C956BFA106D70316ad50"
  */
 function create2Address(sender, bytecodeHash, salt, input = '') {
-    const prefix = ethers_1.ethers.utils.keccak256(ethers_1.ethers.utils.toUtf8Bytes('zksyncCreate2'));
-    const inputHash = ethers_1.ethers.utils.keccak256(input);
-    const addressBytes = ethers_1.ethers.utils
-        .keccak256(ethers_1.ethers.utils.concat([
+    const prefix = ethers_1.ethers.keccak256(ethers_1.ethers.toUtf8Bytes('zksyncCreate2'));
+    const inputHash = ethers_1.ethers.keccak256(input);
+    const addressBytes = ethers_1.ethers
+        .keccak256(ethers_1.ethers.concat([
         prefix,
-        ethers_1.ethers.utils.zeroPad(sender, 32),
+        ethers_1.ethers.zeroPadValue(sender, 32),
         salt,
         bytecodeHash,
         inputHash,
     ]))
         .slice(26);
-    return ethers_1.ethers.utils.getAddress(addressBytes);
+    return ethers_1.ethers.getAddress(addressBytes);
 }
 exports.create2Address = create2Address;
 /**
@@ -362,15 +367,15 @@ exports.create2Address = create2Address;
  * // address = "0x4B5DF730c2e6b28E17013A1485E5d9BC41Efe021"
  */
 function createAddress(sender, senderNonce) {
-    const prefix = ethers_1.ethers.utils.keccak256(ethers_1.ethers.utils.toUtf8Bytes('zksyncCreate'));
-    const addressBytes = ethers_1.ethers.utils
-        .keccak256(ethers_1.ethers.utils.concat([
+    const prefix = ethers_1.ethers.keccak256(ethers_1.ethers.toUtf8Bytes('zksyncCreate'));
+    const addressBytes = ethers_1.ethers
+        .keccak256(ethers_1.ethers.concat([
         prefix,
-        ethers_1.ethers.utils.zeroPad(sender, 32),
-        ethers_1.ethers.utils.zeroPad(ethers_1.ethers.utils.hexlify(senderNonce), 32),
+        ethers_1.ethers.zeroPadValue(sender, 32),
+        ethers_1.ethers.toBeHex(senderNonce, 32),
     ]))
         .slice(26);
-    return ethers_1.ethers.utils.getAddress(addressBytes);
+    return ethers_1.ethers.getAddress(addressBytes);
 }
 exports.createAddress = createAddress;
 /**
@@ -384,7 +389,7 @@ exports.createAddress = createAddress;
  *
  * import { utils } from "zksync-ethers";
  *
- * const baseCost = BigNumber.from(100);
+ * const baseCost = 100;
  * const value = 99;
  * try {
  *   await utils.checkBaseCost(baseCost, value);
@@ -393,7 +398,7 @@ exports.createAddress = createAddress;
  * }
  */
 async function checkBaseCost(baseCost, value) {
-    if (baseCost.gt(await value)) {
+    if (baseCost > (await value)) {
         throw new Error('The base cost of performing the priority operation is higher than the provided value parameter ' +
             `for the transaction: baseCost: ${baseCost}, provided value: ${value}!`);
     }
@@ -413,7 +418,7 @@ exports.checkBaseCost = checkBaseCost;
  *
  * import { utils } from "zksync-ethers";
  *
- * const serializedTx = utils.serialize({ chainId: 270, from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049" }, null);
+ * const serializedTx = utils.serializeEip712({ chainId: 270, from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049" }, null);
  *
  * // serializedTx = "0x71ea8080808080808082010e808082010e9436615cf349d7f6344891b1e7ca7c72883f5dc04982c350c080c0"
  *
@@ -422,9 +427,9 @@ exports.checkBaseCost = checkBaseCost;
  * import { utils } from "zksync-ethers";
  * import { ethers } from "ethers";
  *
- * const signature = ethers.utils.splitSignature("0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a");
+ * const signature = ethers.Signature.from("0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a");
  *
- * const serializedTx = utils.serialize(
+ * const serializedTx = utils.serializeEip712(
  *   {
  *     chainId: 270,
  *     from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
@@ -435,70 +440,62 @@ exports.checkBaseCost = checkBaseCost;
  * );
  * // serializedTx = "0x71f87f8080808094a61464658afeaf65cccaafd3a512b69a83b77618830f42408001a073a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aa02f87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a82010e9436615cf349d7f6344891b1e7ca7c72883f5dc04982c350c080c0"
  */
-function serialize(transaction, signature) {
-    var _a, _b;
-    if (!transaction.customData && transaction.type !== exports.EIP712_TX_TYPE) {
-        return ethers_1.utils.serializeTransaction(transaction, signature);
-    }
+function serializeEip712(transaction, signature) {
     if (!transaction.chainId) {
         throw Error("Transaction chainId isn't set!");
-    }
-    function formatNumber(value, name) {
-        const result = ethers_1.utils.stripZeros(ethers_1.BigNumber.from(value).toHexString());
-        if (result.length > 32) {
-            throw new Error(`Invalid length for ${name}!`);
-        }
-        return result;
     }
     if (!transaction.from) {
         throw new Error('Explicitly providing `from` field is required for EIP712 transactions!');
     }
     const from = transaction.from;
-    const meta = (_a = transaction.customData) !== null && _a !== void 0 ? _a : {};
+    const meta = transaction.customData ?? {};
     const maxFeePerGas = transaction.maxFeePerGas || transaction.gasPrice || 0;
     const maxPriorityFeePerGas = transaction.maxPriorityFeePerGas || maxFeePerGas;
     const fields = [
-        formatNumber(transaction.nonce || 0, 'nonce'),
-        formatNumber(maxPriorityFeePerGas, 'maxPriorityFeePerGas'),
-        formatNumber(maxFeePerGas, 'maxFeePerGas'),
-        formatNumber(transaction.gasLimit || 0, 'gasLimit'),
-        transaction.to ? ethers_1.utils.getAddress(transaction.to) : '0x',
-        formatNumber(transaction.value || 0, 'value'),
+        ethers_1.ethers.toBeArray(transaction.nonce || 0),
+        ethers_1.ethers.toBeArray(maxPriorityFeePerGas),
+        ethers_1.ethers.toBeArray(maxFeePerGas),
+        ethers_1.ethers.toBeArray(transaction.gasLimit || 0),
+        transaction.to ? ethers_1.ethers.getAddress(transaction.to) : '0x',
+        ethers_1.ethers.toBeArray(transaction.value || 0),
         transaction.data || '0x',
     ];
     if (signature) {
-        const sig = ethers_1.utils.splitSignature(signature);
-        fields.push(formatNumber(sig.recoveryParam, 'recoveryParam'));
-        fields.push(ethers_1.utils.stripZeros(sig.r));
-        fields.push(ethers_1.utils.stripZeros(sig.s));
+        const sig = ethers_1.ethers.Signature.from(signature);
+        fields.push(ethers_1.ethers.toBeArray(sig.yParity));
+        fields.push(ethers_1.ethers.toBeArray(sig.r));
+        fields.push(ethers_1.ethers.toBeArray(sig.s));
     }
     else {
-        fields.push(formatNumber(transaction.chainId, 'chainId'));
+        fields.push(ethers_1.ethers.toBeArray(transaction.chainId));
         fields.push('0x');
         fields.push('0x');
     }
-    fields.push(formatNumber(transaction.chainId, 'chainId'));
-    fields.push(ethers_1.utils.getAddress(from));
+    fields.push(ethers_1.ethers.toBeArray(transaction.chainId));
+    fields.push(ethers_1.ethers.getAddress(from));
     // Add meta
-    fields.push(formatNumber(meta.gasPerPubdata || exports.DEFAULT_GAS_PER_PUBDATA_LIMIT, 'gasPerPubdata'));
-    fields.push(((_b = meta.factoryDeps) !== null && _b !== void 0 ? _b : []).map(dep => ethers_1.utils.hexlify(dep)));
+    fields.push(ethers_1.ethers.toBeArray(meta.gasPerPubdata || exports.DEFAULT_GAS_PER_PUBDATA_LIMIT));
+    fields.push((meta.factoryDeps ?? []).map(dep => ethers_1.ethers.hexlify(dep)));
     if (meta.customSignature &&
-        ethers_1.ethers.utils.arrayify(meta.customSignature).length === 0) {
+        ethers_1.ethers.getBytes(meta.customSignature).length === 0) {
         throw new Error('Empty signatures are not supported!');
     }
     fields.push(meta.customSignature || '0x');
     if (meta.paymasterParams) {
         fields.push([
             meta.paymasterParams.paymaster,
-            ethers_1.ethers.utils.hexlify(meta.paymasterParams.paymasterInput),
+            ethers_1.ethers.hexlify(meta.paymasterParams.paymasterInput),
         ]);
     }
     else {
         fields.push([]);
     }
-    return ethers_1.utils.hexConcat([[exports.EIP712_TX_TYPE], ethers_1.utils.RLP.encode(fields)]);
+    return ethers_1.ethers.concat([
+        new Uint8Array([exports.EIP712_TX_TYPE]),
+        ethers_1.ethers.encodeRlp(fields),
+    ]);
 }
-exports.serialize = serialize;
+exports.serializeEip712 = serializeEip712;
 /**
  * Returns the hash of the given bytecode.
  *
@@ -521,25 +518,25 @@ exports.serialize = serialize;
  */
 function hashBytecode(bytecode) {
     // For getting the consistent length we first convert the bytecode to UInt8Array
-    const bytecodeAsArray = ethers_1.ethers.utils.arrayify(bytecode);
+    const bytecodeAsArray = ethers_1.ethers.getBytes(bytecode);
     if (bytecodeAsArray.length % 32 !== 0) {
         throw new Error('The bytecode length in bytes must be divisible by 32!');
     }
     if (bytecodeAsArray.length > exports.MAX_BYTECODE_LEN_BYTES) {
         throw new Error(`Bytecode can not be longer than ${exports.MAX_BYTECODE_LEN_BYTES} bytes!`);
     }
-    const hashStr = ethers_1.ethers.utils.sha256(bytecodeAsArray);
-    const hash = ethers_1.ethers.utils.arrayify(hashStr);
+    const hashStr = ethers_1.ethers.sha256(bytecodeAsArray);
+    const hash = ethers_1.ethers.getBytes(hashStr);
     // Note that the length of the bytecode
     // should be provided in 32-byte words.
     const bytecodeLengthInWords = bytecodeAsArray.length / 32;
     if (bytecodeLengthInWords % 2 === 0) {
         throw new Error('Bytecode length in 32-byte words must be odd!');
     }
-    const bytecodeLength = ethers_1.ethers.utils.arrayify(bytecodeLengthInWords);
+    const bytecodeLength = ethers_1.ethers.toBeArray(bytecodeLengthInWords);
     // The bytecode should always take the first 2 bytes of the bytecode hash,
     // so we pad it from the left in case the length is smaller than 2 bytes.
-    const bytecodeLengthPadded = ethers_1.ethers.utils.zeroPad(bytecodeLength, 2);
+    const bytecodeLengthPadded = ethers_1.ethers.getBytes(ethers_1.ethers.zeroPadValue(bytecodeLength, 2));
     const codeHashVersion = new Uint8Array([1, 0]);
     hash.set(codeHashVersion, 0);
     hash.set(bytecodeLengthPadded, 2);
@@ -557,41 +554,41 @@ exports.hashBytecode = hashBytecode;
  *
  * const serializedTx =
  *   "0x71f87f8080808094a61464658afeaf65cccaafd3a512b69a83b77618830f42408001a073a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aa02f87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a82010e9436615cf349d7f6344891b1e7ca7c72883f5dc04982c350c080c0";
- * const tx: types.TransactionLike = utils.parseTransaction(serializedTx);
+ * const tx: types.TransactionLike = utils.parseEip712(serializedTx);
  * /*
- * const tx = {
- *     type: 113,
- *     nonce: 0,
- *     maxPriorityFeePerGas: BigNumber.from(0),
- *     maxFeePerGas: BigNumber.from(0),
- *     gasLimit: BigNumber.from(0),
- *     to: RECEIVER,
- *     value: BigNumber.from(1000000),
- *     data: '0x',
- *     chainId: 270,
- *     from: ADDRESS,
- *     customData: {
- *     gasPerPubdata: BigNumber.from(50000),
+ * tx: types.TransactionLike = {
+ *   type: 113,
+ *   nonce: 0,
+ *   maxPriorityFeePerGas: 0n,
+ *   maxFeePerGas: 0n,
+ *   gasLimit: 0n,
+ *   to: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
+ *   value: 1000000n,
+ *   data: "0x",
+ *   chainId: 270n,
+ *   from: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
+ *   customData: {
+ *     gasPerPubdata: 50000n,
  *     factoryDeps: [],
- *     customSignature: '0x',
- *     paymasterParams: undefined,
+ *     customSignature: "0x",
+ *     paymasterParams: null,
  *   },
- *   hash: '0x9ed410ce33179ac1ff6b721060605afc72d64febfe0c08cacab5a246602131ee',
+ *   hash: "0x9ed410ce33179ac1ff6b721060605afc72d64febfe0c08cacab5a246602131ee",
  * };
  * *\/
  */
-function parseTransaction(payload) {
+function parseEip712(payload) {
     function handleAddress(value) {
         if (value === '0x') {
             return null;
         }
-        return ethers_1.utils.getAddress(value);
+        return ethers_1.ethers.getAddress(value);
     }
     function handleNumber(value) {
-        if (value === '0x') {
-            return ethers_1.BigNumber.from(0);
+        if (!value || value === '0x') {
+            return 0n;
         }
-        return ethers_1.BigNumber.from(value);
+        return BigInt(value);
     }
     function arrayToPaymasterParams(arr) {
         if (arr.length === 0) {
@@ -601,18 +598,15 @@ function parseTransaction(payload) {
             throw new Error(`Invalid paymaster parameters, expected to have length of 2, found ${arr.length}!`);
         }
         return {
-            paymaster: ethers_1.utils.getAddress(arr[0]),
-            paymasterInput: ethers_1.utils.arrayify(arr[1]),
+            paymaster: ethers_1.ethers.getAddress(arr[0]),
+            paymasterInput: ethers_1.ethers.getBytes(arr[1]),
         };
     }
-    const bytes = ethers_1.utils.arrayify(payload);
-    if (bytes[0] !== exports.EIP712_TX_TYPE) {
-        return ethers_1.utils.parseTransaction(bytes);
-    }
-    const raw = ethers_1.utils.RLP.decode(bytes.slice(1));
+    const bytes = ethers_1.ethers.getBytes(payload);
+    const raw = ethers_1.ethers.decodeRlp(bytes.slice(1));
     const transaction = {
         type: exports.EIP712_TX_TYPE,
-        nonce: handleNumber(raw[0]).toNumber(),
+        nonce: Number(handleNumber(raw[0])),
         maxPriorityFeePerGas: handleNumber(raw[1]),
         maxFeePerGas: handleNumber(raw[2]),
         gasLimit: handleNumber(raw[3]),
@@ -629,29 +623,27 @@ function parseTransaction(payload) {
         },
     };
     const ethSignature = {
-        v: handleNumber(raw[7]).toNumber(),
+        v: Number(handleNumber(raw[7])),
         r: raw[8],
         s: raw[9],
     };
-    if ((ethers_1.utils.hexlify(ethSignature.r) === '0x' ||
-        ethers_1.utils.hexlify(ethSignature.s) === '0x') &&
-        !transaction.customData.customSignature) {
+    if ((ethers_1.ethers.hexlify(ethSignature.r) === '0x' ||
+        ethers_1.ethers.hexlify(ethSignature.s) === '0x') &&
+        !transaction.customData?.customSignature) {
         return transaction;
     }
     if (ethSignature.v !== 0 &&
         ethSignature.v !== 1 &&
-        !transaction.customData.customSignature) {
+        !transaction.customData?.customSignature) {
         throw new Error('Failed to parse signature!');
     }
-    if (!transaction.customData.customSignature) {
-        transaction.v = ethSignature.v;
-        transaction.s = ethSignature.s;
-        transaction.r = ethSignature.r;
+    if (!transaction.customData?.customSignature) {
+        transaction.signature = ethers_1.ethers.Signature.from(ethSignature);
     }
     transaction.hash = eip712TxHash(transaction, ethSignature);
     return transaction;
 }
-exports.parseTransaction = parseTransaction;
+exports.parseEip712 = parseEip712;
 /**
  * Returns the custom signature from EIP712 transaction if provided,
  * otherwise returns the Ethereum signature in bytes representation.
@@ -668,22 +660,22 @@ exports.parseTransaction = parseTransaction;
  * const tx: types.TransactionLike = {
  *   type: 113,
  *   nonce: 0,
- *   maxPriorityFeePerGas: 0,
- *   maxFeePerGas: 0,
- *   gasLimit: 0,
+ *   maxPriorityFeePerGas: 0n,
+ *   maxFeePerGas: 0n,
+ *   gasLimit: 0n,
  *   to: '0xa61464658AfeAf65CccaaFD3a512b69A83B77618',
- *   value: 1_000_000,
+ *   value: 1_000_000n,
  *   data: '0x',
- *   chainId: 270,
+ *   chainId: 270n,
  *   from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
  *   customData: {
- *     gasPerPubdata: 50_000,
+ *     gasPerPubdata: 50_000n,
  *     factoryDeps: [],
  *     customSignature:
  *       '0x307837373262396162343735386435636630386637643732303161646332653534383933616532376263666562323162396337643666643430393766346464653063303166376630353332323866346636643838653662663334333436343931343135363761633930363632306661653832633239333339393062353563613336363162',
  *     paymasterParams: {
  *       paymaster: '0xa222f0c183AFA73a8Bc1AFb48D34C88c9Bf7A174',
- *       paymasterInput: ethers.utils.arrayify(
+ *       paymasterInput: ethers.getBytes(
  *         '0x949431dc000000000000000000000000841c43fa5d8fffdb9efe3358906f7578d8700dd4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000'
  *       ),
  *     },
@@ -699,22 +691,22 @@ exports.parseTransaction = parseTransaction;
  * import { utils } from "zksync-ethers";
  * import { ethers } from "ethers";
  *
- * const ethSignature = '0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a'
- *
+ * const ethSignature = ethers.Signature.from(
+ *   '0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a'
+ * );
  * const signature =  utils.getSignature(undefined, ethSignature);
  * // signature = '0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a'
  */
 function getSignature(transaction, ethSignature) {
-    var _a;
-    if (((_a = transaction === null || transaction === void 0 ? void 0 : transaction.customData) === null || _a === void 0 ? void 0 : _a.customSignature) &&
+    if (transaction?.customData?.customSignature &&
         transaction.customData.customSignature.length) {
-        return ethers_1.ethers.utils.arrayify(transaction.customData.customSignature);
+        return ethers_1.ethers.getBytes(transaction.customData.customSignature);
     }
     if (!ethSignature) {
         throw new Error('No signature provided!');
     }
-    const r = ethers_1.ethers.utils.zeroPad(ethers_1.ethers.utils.arrayify(ethSignature.r), 32);
-    const s = ethers_1.ethers.utils.zeroPad(ethers_1.ethers.utils.arrayify(ethSignature.s), 32);
+    const r = ethers_1.ethers.getBytes(ethers_1.ethers.zeroPadValue(ethSignature.r, 32));
+    const s = ethers_1.ethers.getBytes(ethers_1.ethers.zeroPadValue(ethSignature.s, 32));
     const v = ethSignature.v;
     return new Uint8Array([...r, ...s, v]);
 }
@@ -735,22 +727,22 @@ function getSignature(transaction, ethSignature) {
  * const tx: types.TransactionRequest = {
  *   type: 113,
  *   nonce: 0,
- *   maxPriorityFeePerGas: 0,
- *   maxFeePerGas: 0,
- *   gasLimit: 0,
+ *   maxPriorityFeePerGas: 0n,
+ *   maxFeePerGas: 0n,
+ *   gasLimit: 0n,
  *   to: '0xa61464658AfeAf65CccaaFD3a512b69A83B77618',
- *   value: 1_000_000,
+ *   value: 1_000_000n,
  *   data: '0x',
- *   chainId: 270,
+ *   chainId: 270n,
  *   from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
  *   customData: {
- *     gasPerPubdata: 50_000,
+ *     gasPerPubdata: 50_000n,
  *     factoryDeps: [],
  *     customSignature:
  *       '0x307837373262396162343735386435636630386637643732303161646332653534383933616532376263666562323162396337643666643430393766346464653063303166376630353332323866346636643838653662663334333436343931343135363761633930363632306661653832633239333339393062353563613336363162',
  *     paymasterParams: {
  *       paymaster: '0xa222f0c183AFA73a8Bc1AFb48D34C88c9Bf7A174',
- *       paymasterInput: ethers.utils.arrayify(
+ *       paymasterInput: ethers.getBytes(
  *         '0x949431dc000000000000000000000000841c43fa5d8fffdb9efe3358906f7578d8700dd4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000'
  *       ),
  *     },
@@ -766,21 +758,23 @@ function getSignature(transaction, ethSignature) {
  * import { ethers } from "ethers";
  *
  * const tx: types.TransactionRequest = {
- *   chainId: 270,
+ *   chainId: 270n,
  *   from: '0x36615Cf349d7F6344891B1e7CA7C72883F5dc049',
  *   to: '0xa61464658AfeAf65CccaaFD3a512b69A83B77618',
- *   value: BigNumber.from(1_000_000),
+ *   value: 1_000_000n,
  * };
- * const signature = '0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a'
- *
+ * const signature = ethers.Signature.from(
+ *   '0x73a20167b8d23b610b058c05368174495adf7da3a4ed4a57eb6dbdeb1fafc24aaf87530d663a0d061f69bb564d2c6fb46ae5ae776bbd4bd2a2a4478b9cd1b42a'
+ * );
  * const hash = utils.eip712TxHash(tx, signature);
  * // hash = '0x8efdc7ce5f5a75ab945976c3e2b0c2a45e9f8e15ff940d05625ac5545cd9f870'
  */
 function eip712TxHash(transaction, ethSignature) {
     const signedDigest = signer_1.EIP712Signer.getSignedDigest(transaction);
-    const hashedSignature = ethers_1.ethers.utils.keccak256(getSignature(transaction, ethSignature));
-    return ethers_1.ethers.utils.keccak256(ethers_1.ethers.utils.hexConcat([signedDigest, hashedSignature]));
+    const hashedSignature = ethers_1.ethers.keccak256(getSignature(transaction, ethSignature));
+    return ethers_1.ethers.keccak256(ethers_1.ethers.concat([signedDigest, hashedSignature]));
 }
+exports.eip712TxHash = eip712TxHash;
 /**
  * Returns the hash of the L2 priority operation from a given transaction receipt and L2 address.
  *
@@ -810,8 +804,11 @@ function getL2HashFromPriorityOp(txReceipt, zkSyncAddress) {
             continue;
         }
         try {
-            const priorityQueueLog = exports.ZKSYNC_MAIN_ABI.parseLog(log);
-            if (priorityQueueLog && priorityQueueLog.args.txHash) {
+            const priorityQueueLog = exports.ZKSYNC_MAIN_ABI.parseLog({
+                topics: log.topics,
+                data: log.data,
+            });
+            if (priorityQueueLog && priorityQueueLog.args.txHash !== null) {
                 txHash = priorityQueueLog.args.txHash;
             }
         }
@@ -825,7 +822,7 @@ function getL2HashFromPriorityOp(txReceipt, zkSyncAddress) {
     return txHash;
 }
 exports.getL2HashFromPriorityOp = getL2HashFromPriorityOp;
-const ADDRESS_MODULO = ethers_1.BigNumber.from(2).pow(160);
+const ADDRESS_MODULO = 2n ** 160n;
 /**
  * Converts the address that submitted a transaction to the inbox on L1 to the `msg.sender` viewed on L2.
  * Returns the `msg.sender` of the `L1->L2` transaction as the address of the contract that initiated the transaction.
@@ -850,10 +847,7 @@ const ADDRESS_MODULO = ethers_1.BigNumber.from(2).pow(160);
  * // l2ContractAddress = "0x813A42B8205E5DedCd3374e5f4419843ADa77FFC"
  */
 function applyL1ToL2Alias(address) {
-    return ethers_1.ethers.utils.hexZeroPad(ethers_1.ethers.BigNumber.from(address)
-        .add(exports.L1_TO_L2_ALIAS_OFFSET)
-        .mod(ADDRESS_MODULO)
-        .toHexString(), 20);
+    return ethers_1.ethers.toBeHex((BigInt(address) + BigInt(exports.L1_TO_L2_ALIAS_OFFSET)) % ADDRESS_MODULO, 20);
 }
 exports.applyL1ToL2Alias = applyL1ToL2Alias;
 /**
@@ -873,11 +867,11 @@ exports.applyL1ToL2Alias = applyL1ToL2Alias;
  * // const l1ContractAddress = "0x702942B8205E5dEdCD3374E5f4419843adA76Eeb"
  */
 function undoL1ToL2Alias(address) {
-    let result = ethers_1.ethers.BigNumber.from(address).sub(exports.L1_TO_L2_ALIAS_OFFSET);
-    if (result.lt(ethers_1.BigNumber.from(0))) {
-        result = result.add(ADDRESS_MODULO);
+    let result = BigInt(address) - BigInt(exports.L1_TO_L2_ALIAS_OFFSET);
+    if (result < 0n) {
+        result += ADDRESS_MODULO;
     }
-    return ethers_1.ethers.utils.hexZeroPad(result.toHexString(), 20);
+    return ethers_1.ethers.toBeHex(result, 20);
 }
 exports.undoL1ToL2Alias = undoL1ToL2Alias;
 /**
@@ -901,7 +895,7 @@ async function getERC20DefaultBridgeData(l1TokenAddress, provider) {
     if (isAddressEq(l1TokenAddress, exports.LEGACY_ETH_ADDRESS)) {
         l1TokenAddress = exports.ETH_ADDRESS_IN_CONTRACTS;
     }
-    const token = Ierc20Factory_1.Ierc20Factory.connect(l1TokenAddress, provider);
+    const token = typechain_1.IERC20__factory.connect(l1TokenAddress, provider);
     const name = isAddressEq(l1TokenAddress, exports.ETH_ADDRESS_IN_CONTRACTS)
         ? 'Ether'
         : await token.name();
@@ -911,7 +905,7 @@ async function getERC20DefaultBridgeData(l1TokenAddress, provider) {
     const decimals = isAddressEq(l1TokenAddress, exports.ETH_ADDRESS_IN_CONTRACTS)
         ? 18
         : await token.decimals();
-    const coder = new utils_1.AbiCoder();
+    const coder = new ethers_1.AbiCoder();
     const nameBytes = coder.encode(['string'], [name]);
     const symbolBytes = coder.encode(['string'], [symbol]);
     const decimalsBytes = coder.encode(['uint256'], [decimals]);
@@ -993,7 +987,7 @@ exports.getERC20BridgeCalldata = getERC20BridgeCalldata;
  */
 function isECDSASignatureCorrect(address, msgHash, signature) {
     try {
-        return isAddressEq(address, ethers_1.ethers.utils.recoverAddress(msgHash, signature));
+        return isAddressEq(address, ethers_1.ethers.recoverAddress(msgHash, signature));
     }
     catch {
         // In case ECDSA signature verification has thrown an error,
@@ -1036,7 +1030,7 @@ function isECDSASignatureCorrect(address, msgHash, signature) {
  * // magicValue = "0x1626ba7e"
  */
 async function isEIP1271SignatureCorrect(provider, address, msgHash, signature) {
-    const accountContract = new ethers_1.ethers.Contract(address, exports.IERC1271, provider);
+    const accountContract = new ethers_1.ethers.Contract(address, exports.IERC1271.fragments, provider);
     // This line may throw an exception if the contract does not implement the EIP1271 correctly.
     // But it may also throw an exception in case the internet connection is lost.
     // It is the caller's responsibility to handle the exception.
@@ -1072,7 +1066,7 @@ async function isEIP1271SignatureCorrect(provider, address, msgHash, signature) 
  */
 async function isSignatureCorrect(provider, address, msgHash, signature) {
     const code = await provider.getCode(address);
-    const isContractAccount = ethers_1.ethers.utils.arrayify(code).length !== 0;
+    const isContractAccount = ethers_1.ethers.getBytes(code).length !== 0;
     if (!isContractAccount) {
         return isECDSASignatureCorrect(address, msgHash, signature);
     }
@@ -1107,7 +1101,7 @@ async function isSignatureCorrect(provider, address, msgHash, signature) {
  * // isValidSignature = true
  */
 async function isMessageSignatureCorrect(provider, address, message, signature) {
-    const msgHash = ethers_1.ethers.utils.hashMessage(message);
+    const msgHash = ethers_1.ethers.hashMessage(message);
     return await isSignatureCorrect(provider, address, msgHash, signature);
 }
 exports.isMessageSignatureCorrect = isMessageSignatureCorrect;
@@ -1124,6 +1118,7 @@ exports.isMessageSignatureCorrect = isMessageSignatureCorrect;
  * @example
  *
  * import { Wallet, utils, Provider, EIP712Signer } from "zksync-ethers";
+ * import { ethers } from "ethers";
  *
  * const ADDRESS = "<WALLET_ADDRESS>";
  * const PRIVATE_KEY = "<WALLET_PRIVATE_KEY>";
@@ -1134,7 +1129,7 @@ exports.isMessageSignatureCorrect = isMessageSignatureCorrect;
  *   chainId: 270,
  *   from: ADDRESS,
  *   to: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
- *   value: BigNumber.from(7_000_000),
+ *   value: 7_000_000n,
  * };
  *
  * const eip712Signer = new EIP712Signer(
@@ -1155,11 +1150,13 @@ exports.isMessageSignatureCorrect = isMessageSignatureCorrect;
  * // isValidSignature = true
  */
 async function isTypedDataSignatureCorrect(provider, address, domain, types, value, signature) {
-    const msgHash = ethers_1.ethers.utils._TypedDataEncoder.hash(domain, types, value);
+    const msgHash = ethers_1.ethers.TypedDataEncoder.hash(domain, types, value);
     return await isSignatureCorrect(provider, address, msgHash, signature);
 }
 exports.isTypedDataSignatureCorrect = isTypedDataSignatureCorrect;
 /**
+ * @deprecated In favor of {@link provider.estimateDefaultBridgeDepositL2Gas}
+ *
  * Returns an estimation of the L2 gas required for token bridging via the default ERC20 bridge.
  *
  * @param providerL1 The Ethers provider for the L1 network.
@@ -1169,9 +1166,6 @@ exports.isTypedDataSignatureCorrect = isTypedDataSignatureCorrect;
  * @param to The recipient address on the L2 network.
  * @param from The sender address on the L1 network.
  * @param gasPerPubdataByte The current gas per byte of pubdata.
- *
- * @see
- * {@link https://docs.zksync.io/build/developer-reference/bridging-asset.html#default-bridges Default bridges documentation}.
  *
  * @example
  *
@@ -1187,7 +1181,7 @@ exports.isTypedDataSignatureCorrect = isTypedDataSignatureCorrect;
  * const from = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049";
  * const gasPerPubdataByte = utils.REQUIRED_L1_TO_L2_GAS_PER_PUBDATA_LIMIT;
  *
- * const gas = await utils.estimateCustomBridgeDepositL2Gas(
+ * const gas = await utils.estimateDefaultBridgeDepositL2Gas(
  *   ethProvider,
  *   provider,
  *   token,
@@ -1202,7 +1196,7 @@ async function estimateDefaultBridgeDepositL2Gas(providerL1, providerL2, token, 
     // If the `from` address is not provided, we use a random address, because
     // due to storage slot aggregation, the gas estimation will depend on the address
     // and so estimation for the zero address may be smaller than for the sender.
-    from !== null && from !== void 0 ? from : (from = ethers_1.ethers.Wallet.createRandom().address);
+    from ?? (from = ethers_1.ethers.Wallet.createRandom().address);
     if (await providerL2.isBaseToken(token)) {
         return await providerL2.estimateL1ToL2Execute({
             contractAddress: to,
@@ -1238,12 +1232,13 @@ exports.estimateDefaultBridgeDepositL2Gas = estimateDefaultBridgeDepositL2Gas;
  * // scaledGasLimit = 12_000
  */
 function scaleGasLimit(gasLimit) {
-    return gasLimit
-        .mul(exports.L1_FEE_ESTIMATION_COEF_NUMERATOR)
-        .div(exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR);
+    return ((gasLimit * BigInt(exports.L1_FEE_ESTIMATION_COEF_NUMERATOR)) /
+        BigInt(exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR));
 }
 exports.scaleGasLimit = scaleGasLimit;
 /**
+ * @deprecated In favor of {@link provider.estimateCustomBridgeDepositL2Gas}
+ *
  * Returns an estimation of the L2 gas required for token bridging via the custom ERC20 bridge.
  *
  * @param providerL2 The ZKsync provider for the L2 network.
@@ -1256,9 +1251,6 @@ exports.scaleGasLimit = scaleGasLimit;
  * @param from The sender address on the L1 network.
  * @param gasPerPubdataByte The current gas per byte of pubdata.
  * @param l2Value The `msg.value` of L2 transaction.
- *
- * @see
- * {@link https://docs.zksync.io/build/developer-reference/bridging-asset.html#custom-bridges-on-l1-and-l2 Custom bridges documentation}.
  *
  * @example
  *
@@ -1302,9 +1294,9 @@ async function estimateCustomBridgeDepositL2Gas(providerL2, l1BridgeAddress, l2B
     return await providerL2.estimateL1ToL2Execute({
         caller: applyL1ToL2Alias(l1BridgeAddress),
         contractAddress: l2BridgeAddress,
-        gasPerPubdataByte,
-        calldata,
-        l2Value,
+        gasPerPubdataByte: gasPerPubdataByte,
+        calldata: calldata,
+        l2Value: l2Value,
     });
 }
 exports.estimateCustomBridgeDepositL2Gas = estimateCustomBridgeDepositL2Gas;
@@ -1317,7 +1309,7 @@ exports.estimateCustomBridgeDepositL2Gas = estimateCustomBridgeDepositL2Gas;
  *
  * import { utils } from "zksync-ethers";
  *
- * const json = utils.toJSON({gasLimit: BigNumber.from(1_000)})
+ * const json = utils.toJSON({gasLimit: 1_000n})
  * // {"gasLimit": 1000}
  */
 function toJSON(object) {

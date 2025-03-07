@@ -7,10 +7,11 @@ exports.getPaymasterParams = exports.getGeneralPaymasterInput = exports.getAppro
 const ethers_1 = require("ethers");
 const IPaymasterFlow_json_1 = __importDefault(require("../abi/IPaymasterFlow.json"));
 /**
- * The ABI for the `IPaymasterFlow` interface, which is utilized for encoding input parameters for paymaster flows.
- * @constant
+ * The ABI for the `IPaymasterFlow` interface, which is utilized
+ * for encoding input parameters for paymaster flows.
+ * @readonly
  */
-exports.PAYMASTER_FLOW_ABI = new ethers_1.ethers.utils.Interface(IPaymasterFlow_json_1.default);
+exports.PAYMASTER_FLOW_ABI = new ethers_1.ethers.Interface(IPaymasterFlow_json_1.default);
 /**
  * Returns encoded input for an approval-based paymaster.
  *
@@ -54,7 +55,7 @@ exports.getGeneralPaymasterInput = getGeneralPaymasterInput;
  * const result = utils.getPaymasterParams("0x0a67078A35745947A37A552174aFe724D8180c25", {
  *   type: "ApprovalBased",
  *   token: "0x65C899B5fb8Eb9ae4da51D67E1fc417c7CB7e964",
- *   minimalAllowance: BigNumber.from(1),
+ *   minimalAllowance: BigInt(1),
  *   innerInput: new Uint8Array(),
  * });
  */

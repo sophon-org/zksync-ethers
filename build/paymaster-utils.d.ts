@@ -1,10 +1,11 @@
 import { BytesLike, ethers } from 'ethers';
 import { Address, ApprovalBasedPaymasterInput, GeneralPaymasterInput, PaymasterInput, PaymasterParams } from './types';
 /**
- * The ABI for the `IPaymasterFlow` interface, which is utilized for encoding input parameters for paymaster flows.
- * @constant
+ * The ABI for the `IPaymasterFlow` interface, which is utilized
+ * for encoding input parameters for paymaster flows.
+ * @readonly
  */
-export declare const PAYMASTER_FLOW_ABI: ethers.utils.Interface;
+export declare const PAYMASTER_FLOW_ABI: ethers.Interface;
 /**
  * Returns encoded input for an approval-based paymaster.
  *
@@ -36,7 +37,7 @@ export declare function getGeneralPaymasterInput(paymasterInput: GeneralPaymaste
  * const result = utils.getPaymasterParams("0x0a67078A35745947A37A552174aFe724D8180c25", {
  *   type: "ApprovalBased",
  *   token: "0x65C899B5fb8Eb9ae4da51D67E1fc417c7CB7e964",
- *   minimalAllowance: BigNumber.from(1),
+ *   minimalAllowance: BigInt(1),
  *   innerInput: new Uint8Array(),
  * });
  */
