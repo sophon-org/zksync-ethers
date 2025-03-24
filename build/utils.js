@@ -193,7 +193,7 @@ exports.L1_FEE_ESTIMATION_COEF_DENOMINATOR = 10;
  *
  * @readonly
  */
-exports.L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 400000;
+exports.L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 1000000;
 /**
  * Gas limit used for displaying the error messages when the
  * users do not have enough fee when depositing `ETH` token from L1 to L2.
