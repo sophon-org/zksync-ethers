@@ -1238,7 +1238,9 @@ class Provider extends ethers_1.ethers.providers.JsonRpcProvider {
      * console.log(`Gas for withdrawal tx: ${gasWithdraw}`);
      */
     async estimateGasWithdraw(transaction) {
+        console.log("estimateGasWithdraw", transaction);
         const withdrawTx = await this.getWithdrawTx(transaction);
+        console.log("withdrawTx", withdrawTx);
         return await this.estimateGas(withdrawTx);
     }
     /**
