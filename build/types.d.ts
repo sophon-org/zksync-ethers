@@ -1,4 +1,4 @@
-import { BigNumberish, BytesLike, ethers, TransactionRequest as EthersTransactionRequest } from 'ethers';
+import { AddressLike, BigNumberish, BytesLike, ethers, TransactionRequest as EthersTransactionRequest } from 'ethers';
 import { Provider } from './provider';
 /** 0x-prefixed, hex encoded, ethereum account address. */
 export type Address = string;
@@ -652,3 +652,17 @@ export interface SmartAccountSigner {
     /** Custom method for populating transaction requests. */
     transactionBuilder?: TransactionBuilder;
 }
+/**
+ * Contains parameters for finalizing the L2->L1 deposit transaction.
+ * Pre V26 withdrawals were special kind of transaction,
+ * but starting from v26 any cross-chain token movement is called a deposit, regardless of direction
+ */
+export type FinalizeL1DepositParams = {
+    chainId: BigNumberish;
+    l2BatchNumber: BigNumberish;
+    l2MessageIndex: BigNumberish;
+    l2Sender: AddressLike;
+    l2TxNumberInBatch: BigNumberish;
+    message: BytesLike;
+    merkleProof: BytesLike[];
+};

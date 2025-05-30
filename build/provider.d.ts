@@ -1,5 +1,5 @@
 import { ethers, BigNumberish, BytesLike, BlockTag, Filter, FilterByBlockHash, TransactionRequest as EthersTransactionRequest, JsonRpcTransactionRequest, Networkish, Eip1193Provider, JsonRpcError, JsonRpcResult, JsonRpcPayload } from 'ethers';
-import { IL2Bridge, IL2SharedBridge } from './typechain';
+import { IL2AssetRouter, IL2Bridge, IL2NativeTokenVault, IL2SharedBridge } from './typechain';
 import { Address, TransactionResponse, TransactionRequest, TransactionStatus, PriorityOpResponse, BalancesMap, TransactionReceipt, Block, Log, TransactionDetails, BlockDetails, ContractAccountInfo, Network as ZkSyncNetwork, BatchDetails, Fee, RawBlockTransaction, PaymasterParams, StorageProof, LogProof, Token, ProtocolVersion, FeeParams, TransactionWithDetailedOutput } from './types';
 import { Signer } from './signer';
 type Constructor<T = {}> = new (...args: any[]) => T;
@@ -25,6 +25,8 @@ export declare function JsonRpcApiProvider<TBase extends Constructor<ethers.Json
             sharedBridgeL1?: Address;
             sharedBridgeL2?: Address;
             baseToken?: Address;
+            l1Nullifier?: Address;
+            l1NativeTokenVault?: Address;
         };
         _getBlockTag(blockTag?: BlockTag): string | Promise<string>;
         _wrapLog(value: any): Log;
@@ -184,6 +186,7 @@ export declare function JsonRpcApiProvider<TBase extends Constructor<ethers.Json
             sharedL1: string;
             sharedL2: string;
         }>;
+        _setL1NullifierAndNativeTokenVault(l1Nullifier: Address, l1NativeTokenVault: Address): void;
         /**
          * Returns contract wrapper. If given address is shared bridge address it returns Il2SharedBridge and if its legacy it returns Il2Bridge.
          **
@@ -197,6 +200,8 @@ export declare function JsonRpcApiProvider<TBase extends Constructor<ethers.Json
          * const l2Bridge = await provider.connectL2Bridge("<L2_BRIDGE_ADDRESS>");
          */
         connectL2Bridge(address: Address): Promise<IL2SharedBridge | IL2Bridge>;
+        connectL2NativeTokenVault(): Promise<IL2NativeTokenVault>;
+        connectL2AssetRouter(): Promise<IL2AssetRouter>;
         /**
          * Returns true if passed bridge address is legacy and false if its shared bridge.
          **
@@ -526,11 +531,6 @@ export declare function JsonRpcApiProvider<TBase extends Constructor<ethers.Json
         _waitUntilReady(): Promise<void>;
         _getSubscriber(sub: ethers.Subscription): ethers.Subscriber;
         readonly ready: boolean;
-        /**
-         * Returns an estimated {@link Fee} for requested transaction.
-         *
-         * @param transaction The transaction request.
-         */
         getRpcRequest(req: ethers.PerformActionRequest): {
             method: string;
             args: any[];
@@ -608,6 +608,8 @@ declare const Provider_base: {
             sharedBridgeL1?: string | undefined;
             sharedBridgeL2?: string | undefined;
             baseToken?: string | undefined;
+            l1Nullifier?: string | undefined;
+            l1NativeTokenVault?: string | undefined;
         };
         _getBlockTag(blockTag?: ethers.BlockTag | undefined): string | Promise<string>;
         _wrapLog(value: any): Log;
@@ -767,6 +769,7 @@ declare const Provider_base: {
             sharedL1: string;
             sharedL2: string;
         }>;
+        _setL1NullifierAndNativeTokenVault(l1Nullifier: string, l1NativeTokenVault: string): void;
         /**
          * Returns contract wrapper. If given address is shared bridge address it returns Il2SharedBridge and if its legacy it returns Il2Bridge.
          **
@@ -780,6 +783,8 @@ declare const Provider_base: {
          * const l2Bridge = await provider.connectL2Bridge("<L2_BRIDGE_ADDRESS>");
          */
         connectL2Bridge(address: string): Promise<IL2Bridge | IL2SharedBridge>;
+        connectL2NativeTokenVault(): Promise<IL2NativeTokenVault>;
+        connectL2AssetRouter(): Promise<IL2AssetRouter>;
         /**
          * Returns true if passed bridge address is legacy and false if its shared bridge.
          **
@@ -1109,11 +1114,6 @@ declare const Provider_base: {
         _waitUntilReady(): Promise<void>;
         _getSubscriber(sub: ethers.Subscription): ethers.Subscriber;
         readonly ready: boolean;
-        /**
-         * Returns an estimated {@link Fee} for requested transaction.
-         *
-         * @param transaction The transaction request.
-         */
         getRpcRequest(req: ethers.PerformActionRequest): {
             method: string;
             args: any[];
@@ -1176,18 +1176,30 @@ declare const Provider_base: {
 export declare class Provider extends Provider_base {
     #private;
     protected _contractAddresses: {
+        bridgehubContract?: Address;
         mainContract?: Address;
         erc20BridgeL1?: Address;
         erc20BridgeL2?: Address;
         wethBridgeL1?: Address;
         wethBridgeL2?: Address;
+        sharedBridgeL1?: Address;
+        sharedBridgeL2?: Address;
+        baseToken?: Address;
+        l1Nullifier?: Address;
+        l1NativeTokenVault?: Address;
     };
     contractAddresses(): {
+        bridgehubContract?: Address;
         mainContract?: Address;
         erc20BridgeL1?: Address;
         erc20BridgeL2?: Address;
         wethBridgeL1?: Address;
         wethBridgeL2?: Address;
+        sharedBridgeL1?: Address;
+        sharedBridgeL2?: Address;
+        baseToken?: Address;
+        l1Nullifier?: Address;
+        l1NativeTokenVault?: Address;
     };
     /**
      * Creates a new `Provider` instance for connecting to an L2 network.
@@ -2047,6 +2059,8 @@ declare const BrowserProvider_base: {
             sharedBridgeL1?: string | undefined;
             sharedBridgeL2?: string | undefined;
             baseToken?: string | undefined;
+            l1Nullifier?: string | undefined;
+            l1NativeTokenVault?: string | undefined;
         };
         _getBlockTag(blockTag?: ethers.BlockTag | undefined): string | Promise<string>;
         _wrapLog(value: any): Log;
@@ -2206,6 +2220,7 @@ declare const BrowserProvider_base: {
             sharedL1: string;
             sharedL2: string;
         }>;
+        _setL1NullifierAndNativeTokenVault(l1Nullifier: string, l1NativeTokenVault: string): void;
         /**
          * Returns contract wrapper. If given address is shared bridge address it returns Il2SharedBridge and if its legacy it returns Il2Bridge.
          **
@@ -2219,6 +2234,8 @@ declare const BrowserProvider_base: {
          * const l2Bridge = await provider.connectL2Bridge("<L2_BRIDGE_ADDRESS>");
          */
         connectL2Bridge(address: string): Promise<IL2Bridge | IL2SharedBridge>;
+        connectL2NativeTokenVault(): Promise<IL2NativeTokenVault>;
+        connectL2AssetRouter(): Promise<IL2AssetRouter>;
         /**
          * Returns true if passed bridge address is legacy and false if its shared bridge.
          **
@@ -2548,11 +2565,6 @@ declare const BrowserProvider_base: {
         _waitUntilReady(): Promise<void>;
         _getSubscriber(sub: ethers.Subscription): ethers.Subscriber;
         readonly ready: boolean;
-        /**
-         * Returns an estimated {@link Fee} for requested transaction.
-         *
-         * @param transaction The transaction request.
-         */
         getRpcRequest(req: ethers.PerformActionRequest): {
             method: string;
             args: any[];

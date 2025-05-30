@@ -1,7 +1,7 @@
 import { EIP712Signer } from './signer';
 import { Provider } from './provider';
 import { BigNumberish, BlockTag, BytesLike, ContractTransactionResponse, ethers, Overrides, ProgressCallback } from 'ethers';
-import { Address, BalancesMap, FinalizeWithdrawalParams, FullDepositFee, PaymasterParams, PriorityOpResponse, TransactionLike, TransactionRequest, TransactionResponse } from './types';
+import { Address, BalancesMap, FinalizeL1DepositParams, FinalizeWithdrawalParams, FullDepositFee, PaymasterParams, PriorityOpResponse, TransactionLike, TransactionRequest, TransactionResponse } from './types';
 import { IBridgehub, IL1ERC20Bridge, IL1SharedBridge, IL2Bridge, IL2SharedBridge, IZkSyncHyperchain } from './typechain';
 declare const Wallet_base: {
     new (...args: any[]): {
@@ -39,6 +39,16 @@ declare const Wallet_base: {
         _providerL2(): Provider;
         _providerL1(): ethers.Provider;
         _signerL1(): ethers.Signer;
+        getDefaultBridgeAddresses(): Promise<{
+            erc20L1: string;
+            erc20L2: string;
+            wethL1: string;
+            wethL2: string;
+            sharedL1: string;
+            sharedL2: string;
+            l1Nullifier: string;
+            l1NativeTokenVault: string;
+        }>;
         getMainContract(): Promise<IZkSyncHyperchain>;
         getBridgehubContract(): Promise<IBridgehub>;
         getL1BridgeContracts(): Promise<{
@@ -46,6 +56,9 @@ declare const Wallet_base: {
             weth: IL1ERC20Bridge;
             shared: IL1SharedBridge;
         }>;
+        getL1AssetRouter(address?: string | undefined): Promise<import("./typechain").IL1AssetRouter>;
+        getL1NativeTokenVault(): Promise<import("./typechain").IL1NativeTokenVault>;
+        getL1Nullifier(): Promise<import("./typechain").IL1Nullifier>;
         getBaseToken(): Promise<string>;
         isETHBasedChain(): Promise<boolean>;
         getBalanceL1(token?: string | undefined, blockTag?: BlockTag | undefined): Promise<bigint>;
@@ -153,6 +166,27 @@ declare const Wallet_base: {
             approveERC20?: boolean | undefined;
             approveBaseERC20?: boolean | undefined;
             l2GasLimit?: BigNumberish | undefined;
+            /**
+             * @inheritDoc
+             *
+             * @example
+             *
+             * import { Wallet, Provider, types, utils } from "zksync-ethers";
+             * import { ethers } from "ethers";
+             *
+             * const PRIVATE_KEY = "<WALLET_PRIVATE_KEY>";
+             * const CONTRACT_ADDRESS = "<CONTRACT_ADDRESS>";
+             *
+             * const provider = Provider.getDefaultProvider(types.Network.Sepolia);
+             * const ethProvider = ethers.getDefaultProvider("sepolia");
+             * const wallet = new Wallet(PRIVATE_KEY, provider, ethProvider);
+             *
+             * const tx = await wallet.getRequestExecuteTx({
+             *     contractAddress: await provider.getMainContractAddress(),
+             *     calldata: "0x",
+             *     l2Value: 7_000_000_000,
+             * });
+             */
             gasPerPubdataByte?: BigNumberish | undefined;
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
@@ -212,23 +246,7 @@ declare const Wallet_base: {
             overrides?: ethers.Overrides | undefined;
         }): Promise<{
             tx: {
-                token: string; /**
-                 * Connects to the L2 network using `provider`.
-                 *
-                 * @param provider The provider instance for connecting to an L2 network.
-                 *
-                 * @see {@link connectToL1} in order to connect to L1 network.
-                 *
-                 * @example
-                 *
-                 * import { Wallet, Provider, types } from "zksync-ethers";
-                 *
-                 * const PRIVATE_KEY = "<WALLET_PRIVATE_KEY>";
-                 * const unconnectedWallet = new Wallet(PRIVATE_KEY);
-                 *
-                 * const provider = Provider.getDefaultProvider(types.Network.Sepolia);
-                 * const wallet = unconnectedWallet.connect(provider);
-                 */
+                token: string;
                 amount: BigNumberish;
                 to: string;
                 operatorTip: BigNumberish;
@@ -284,23 +302,7 @@ declare const Wallet_base: {
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
         }): Promise<{
-            token: string; /**
-             * Connects to the L2 network using `provider`.
-             *
-             * @param provider The provider instance for connecting to an L2 network.
-             *
-             * @see {@link connectToL1} in order to connect to L1 network.
-             *
-             * @example
-             *
-             * import { Wallet, Provider, types } from "zksync-ethers";
-             *
-             * const PRIVATE_KEY = "<WALLET_PRIVATE_KEY>";
-             * const unconnectedWallet = new Wallet(PRIVATE_KEY);
-             *
-             * const provider = Provider.getDefaultProvider(types.Network.Sepolia);
-             * const wallet = unconnectedWallet.connect(provider);
-             */
+            token: string;
             amount: BigNumberish;
             to: string;
             operatorTip: BigNumberish;
@@ -315,6 +317,7 @@ declare const Wallet_base: {
             mintValue: BigNumberish;
             l2Value: BigNumberish;
         }>;
+        _getSecondBridgeCalldata(token: string, amount: BigNumberish, to: string): Promise<string>;
         _getDepositTxWithDefaults(transaction: {
             token: string;
             amount: BigNumberish;
@@ -327,23 +330,7 @@ declare const Wallet_base: {
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
         }): Promise<{
-            token: string; /**
-             * Connects to the L2 network using `provider`.
-             *
-             * @param provider The provider instance for connecting to an L2 network.
-             *
-             * @see {@link connectToL1} in order to connect to L1 network.
-             *
-             * @example
-             *
-             * import { Wallet, Provider, types } from "zksync-ethers";
-             *
-             * const PRIVATE_KEY = "<WALLET_PRIVATE_KEY>";
-             * const unconnectedWallet = new Wallet(PRIVATE_KEY);
-             *
-             * const provider = Provider.getDefaultProvider(types.Network.Sepolia);
-             * const wallet = unconnectedWallet.connect(provider);
-             */
+            token: string;
             amount: BigNumberish;
             to: string;
             operatorTip: BigNumberish;
@@ -402,6 +389,7 @@ declare const Wallet_base: {
         }>;
         finalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
         getFinalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
+        getFinalizeDepositParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeL1DepositParams>;
         finalizeWithdrawal(withdrawalHash: BytesLike, index?: number, overrides?: ethers.Overrides | undefined): Promise<ContractTransactionResponse>;
         isWithdrawalFinalized(withdrawalHash: BytesLike, index?: number): Promise<boolean>;
         claimFailedDeposit(depositHash: BytesLike, overrides?: ethers.Overrides | undefined): Promise<ContractTransactionResponse>;
@@ -1037,6 +1025,7 @@ export declare class Wallet extends Wallet_base {
      * const params = await wallet.finalizeWithdrawalParams(WITHDRAWAL_HASH);
      */
     getFinalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
+    getFinalizeDepositParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeL1DepositParams>;
     /**
      * @inheritDoc
      *

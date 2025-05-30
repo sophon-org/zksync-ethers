@@ -1,6 +1,7 @@
 import { BigNumberish, BytesLike, ethers, SignatureLike } from 'ethers';
 import { Address, DeploymentInfo, EthereumSignature, PriorityOpTree, PriorityQueueType, Transaction, TransactionLike, TransactionReceipt, TransactionRequest } from './types';
 import { Provider } from './provider';
+import { IL1NativeTokenVault } from './typechain';
 export * from './paymaster-utils';
 export * from './smart-account-utils';
 export { EIP712_TYPES } from './signer';
@@ -110,6 +111,8 @@ export declare const NONCE_HOLDER_ADDRESS: Address;
  * @readonly
  */
 export declare const L1_TO_L2_ALIAS_OFFSET: Address;
+export declare const L2_ASSET_ROUTER_ADDRESS: Address;
+export declare const L2_NATIVE_TOKEN_VAULT_ADDRESS: Address;
 /**
  * The EIP1271 magic value used for signature validation in smart contracts.
  * This predefined constant serves as a standardized indicator to signal successful
@@ -160,7 +163,7 @@ export declare const L1_FEE_ESTIMATION_COEF_DENOMINATOR = 10;
  *
  * @readonly
  */
-export declare const L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 400000;
+export declare const L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 1000000;
 /**
  * Gas limit used for displaying the error messages when the
  * users do not have enough fee when depositing `ETH` token from L1 to L2.
@@ -783,3 +786,24 @@ export declare function toJSON(object: any): string;
  * // true
  */
 export declare function isAddressEq(a: Address, b: Address): boolean;
+export declare function encodeNativeTokenVaultAssetId(chainId: bigint, address: string): string;
+/**
+ * Resolves the assetId for a token
+ **/
+export declare function resolveAssetId(token: Address, ntvContract: IL1NativeTokenVault): Promise<BytesLike>;
+/**
+ * Encodes the data for a transfer of a token through the Native Token Vault
+ *
+ * @param {bigint} amount The amount of tokens to transfer
+ * @param {Address} receiver The address that will receive the tokens
+ * @param {Address} token The address of the token being transferred
+ * @returns {string} The ABI-encoded transfer data
+ **/
+export declare function encodeNativeTokenVaultTransferData(amount: bigint, receiver: Address, token: Address): string;
+/**
+ * Encodes asset transfer data for BridgeHub contract, using v1 encoding scheme (introduced in v26 upgrade).
+ * Can be utilized to encode deposit initiation data.
+ *
+ * @param {string} assetId - encoded token asset ID
+ * @param {string} transferData - encoded transfer data, see `encodeNativeTokenVaultTransferData`
+ */ export declare function encodeSecondBridgeDataV1(assetId: string, transferData: string): string;

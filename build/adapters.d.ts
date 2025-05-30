@@ -1,7 +1,7 @@
 import { BigNumberish, BlockTag, BytesLike, ContractTransactionResponse, ethers, TransactionRequest as EthersTransactionRequest } from 'ethers';
 import { Provider } from './provider';
-import { IBridgehub, IL1ERC20Bridge, IL1SharedBridge, IL2Bridge, IZkSyncHyperchain, IL2SharedBridge } from './typechain';
-import { Address, BalancesMap, Eip712Meta, FinalizeWithdrawalParams, FullDepositFee, PaymasterParams, PriorityOpResponse, TransactionResponse } from './types';
+import { IBridgehub, IL1ERC20Bridge, IL1SharedBridge, IL2Bridge, IZkSyncHyperchain, IL2SharedBridge, IL1Nullifier, IL1AssetRouter, IL1NativeTokenVault } from './typechain';
+import { Address, FinalizeL1DepositParams, BalancesMap, Eip712Meta, FinalizeWithdrawalParams, FullDepositFee, PaymasterParams, PriorityOpResponse, TransactionResponse } from './types';
 type Constructor<T = {}> = new (...args: any[]) => T;
 interface TxSender {
     sendTransaction(tx: EthersTransactionRequest): Promise<ethers.TransactionResponse>;
@@ -22,6 +22,19 @@ export declare function AdapterL1<TBase extends Constructor<TxSender>>(Base: TBa
          */
         _signerL1(): ethers.Signer;
         /**
+         * Returns the addresses of the default ZKsync Era bridge contracts on both L1 and L2, and some L1 specific contracts.
+         */
+        getDefaultBridgeAddresses(): Promise<{
+            erc20L1: string;
+            erc20L2: string;
+            wethL1: string;
+            wethL2: string;
+            sharedL1: string;
+            sharedL2: string;
+            l1Nullifier: string;
+            l1NativeTokenVault: string;
+        }>;
+        /**
          * Returns `Contract` wrapper of the ZKsync Era smart contract.
          */
         getMainContract(): Promise<IZkSyncHyperchain>;
@@ -39,6 +52,18 @@ export declare function AdapterL1<TBase extends Constructor<TxSender>>(Base: TBa
             weth: IL1ERC20Bridge;
             shared: IL1SharedBridge;
         }>;
+        /**
+         * Returns the L1 asset router contract, used for handling cross chain calls.
+         */
+        getL1AssetRouter(address?: string): Promise<IL1AssetRouter>;
+        /**
+         * Returns the L1 native token vault contract, used for interacting with tokens.
+         */
+        getL1NativeTokenVault(): Promise<IL1NativeTokenVault>;
+        /**
+         * Returns the L1 Nullifier contract, used for replay protection for failed deposits and withdrawals.
+         */
+        getL1Nullifier(): Promise<IL1Nullifier>;
         /**
          * Returns the address of the base token on L1.
          */
@@ -418,6 +443,7 @@ export declare function AdapterL1<TBase extends Constructor<TxSender>>(Base: TBa
             mintValue: BigNumberish;
             l2Value: BigNumberish;
         }>;
+        _getSecondBridgeCalldata(token: Address, amount: BigNumberish, to: Address): Promise<string>;
         _getDepositTxWithDefaults(transaction: {
             token: Address;
             amount: BigNumberish;
@@ -524,7 +550,7 @@ export declare function AdapterL1<TBase extends Constructor<TxSender>>(Base: TBa
         finalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
         /**
          * Returns the {@link FinalizeWithdrawalParams parameters} required for finalizing a withdrawal from the
-         * withdrawal transaction's log on the L1 network.
+         * withdrawal transaction's log on the L2 network. This struct is @deprecated in favor of {@link getFinalizeDepositParams}.
          *
          * @param withdrawalHash Hash of the L2 transaction where the withdrawal was initiated.
          * @param [index=0] In case there were multiple withdrawals in one transaction, you may pass an index of the
@@ -532,6 +558,19 @@ export declare function AdapterL1<TBase extends Constructor<TxSender>>(Base: TBa
          * @throws {Error} If log proof can not be found.
          */
         getFinalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
+        /**
+         * Returns the {@link FinalizeDepositParams parameters} required for finalizing a L2->L1 deposit from the
+         * deposit transaction's log on the L2 network.
+         * This function supersedes {@link getFinalizeWithdrawalParams} with V26,
+         * as now L2 native token bridging is also supported.
+         * Pre V26 withdrawals were special kind of transaction,
+         * but starting from v26 any cross-chain token movement is called a deposit, regardless of direction
+         * @param withdrawalHash Hash of the L2 transaction where the withdrawal was initiated.
+         * @param [index=0] In case there were multiple withdrawals in one transaction, you may pass an index of the
+         * withdrawal you want to finalize.
+         * @throws {Error} If log proof can not be found.
+         */
+        getFinalizeDepositParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeL1DepositParams>;
         /**
          * Proves the inclusion of the `L2->L1` withdrawal message.
          *

@@ -547,6 +547,16 @@ declare const L1Signer_base: {
         _providerL2(): Provider;
         _providerL1(): ethers.Provider;
         _signerL1(): ethers.Signer;
+        getDefaultBridgeAddresses(): Promise<{
+            erc20L1: string;
+            erc20L2: string;
+            wethL1: string;
+            wethL2: string;
+            sharedL1: string;
+            sharedL2: string;
+            l1Nullifier: string;
+            l1NativeTokenVault: string;
+        }>;
         getMainContract(): Promise<IZkSyncHyperchain>;
         getBridgehubContract(): Promise<IBridgehub>;
         getL1BridgeContracts(): Promise<{
@@ -554,6 +564,9 @@ declare const L1Signer_base: {
             weth: IL1ERC20Bridge;
             shared: IL1SharedBridge;
         }>;
+        getL1AssetRouter(address?: string | undefined): Promise<import("./typechain").IL1AssetRouter>;
+        getL1NativeTokenVault(): Promise<import("./typechain").IL1NativeTokenVault>;
+        getL1Nullifier(): Promise<import("./typechain").IL1Nullifier>;
         getBaseToken(): Promise<string>;
         isETHBasedChain(): Promise<boolean>;
         getBalanceL1(token?: string | undefined, blockTag?: BlockTag | undefined): Promise<bigint>;
@@ -581,6 +594,25 @@ declare const L1Signer_base: {
             approveERC20?: boolean | undefined;
             approveBaseERC20?: boolean | undefined;
             l2GasLimit?: BigNumberish | undefined;
+            /**
+             * Creates a new Singer with provided `signer` and `chainId`.
+             *
+             * @param signer  The signer from browser wallet.
+             * @param chainId The chain ID of the network.
+             * @param [zksyncProvider] The provider instance for connecting to a L2 network. If not provided,
+             * the methods from the `zks` namespace are not supported, and interaction with them will result in an error.
+             *
+             * @example
+             *
+             * import { BrowserProvider, Provider, types } from "zksync-ethers";
+             *
+             * const browserProvider = new BrowserProvider(window.ethereum);
+             * const signer = Signer.from(
+             *     await browserProvider.getSigner(),
+             *     Number((await browserProvider.getNetwork()).chainId),
+             *     Provider.getDefaultProvider(types.Network.Sepolia)
+             * );
+             */
             gasPerPubdataByte?: BigNumberish | undefined;
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
@@ -609,22 +641,7 @@ declare const L1Signer_base: {
             amount: BigNumberish;
             to?: string | undefined;
             operatorTip?: BigNumberish | undefined;
-            bridgeAddress?: string | undefined; /**
-             * Get the number of transactions ever sent for account, which is used as the `nonce` when sending a transaction.
-             *
-             * @param [blockTag] The block tag to query. If provided, the transaction count is as of that block.
-             *
-             * import { BrowserProvider, Provider, types } from "zksync-ethers";
-             *
-             * const browserProvider = new BrowserProvider(window.ethereum);
-             * const signer = Signer.from(
-             *     await browserProvider.getSigner(),
-             *     Number((await browserProvider.getNetwork()).chainId),
-             *     Provider.getDefaultProvider(types.Network.Sepolia)
-             * );
-             *
-             * const nonce = await signer.getNonce();
-             */
+            bridgeAddress?: string | undefined;
             approveERC20?: boolean | undefined;
             approveBaseERC20?: boolean | undefined;
             l2GasLimit?: BigNumberish | undefined;
@@ -664,12 +681,6 @@ declare const L1Signer_base: {
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
             approveOverrides?: ethers.Overrides | undefined;
-            /**
-             * A `L1Signer` is designed for frontend use with browser wallet injection (e.g., MetaMask),
-             * providing only L1 operations.
-             *
-             * @see {@link Signer} for L2 operations.
-             */
             approveBaseOverrides?: ethers.Overrides | undefined;
             customBridgeData?: BytesLike | undefined;
         }): Promise<PriorityOpResponse>;
@@ -771,7 +782,27 @@ declare const L1Signer_base: {
             overrides?: ethers.Overrides | undefined;
         }): Promise<{
             tx: ethers.ContractTransaction;
-            mintValue: bigint;
+            mintValue: bigint; /**
+             * @inheritDoc
+             *
+             * @example
+             *
+             * import { Provider, L1Signer, Wallet, types } from "zksync-ethers";
+             * import { ethers } from "ethers";
+             *
+             * const browserProvider = new ethers.BrowserProvider(window.ethereum);
+             * const signer = L1Signer.from(
+             *     await browserProvider.getSigner(),
+             *     Provider.getDefaultProvider(types.Network.Sepolia)
+             * );
+             *
+             * const tokenL1 = "0x56E69Fa1BB0d1402c89E3A4E3417882DeA6B14Be";
+             * const fee = await signer.getFullRequiredDepositFee({
+             *   token: tokenL1,
+             *   to: Wallet.createRandom().address,
+             * });
+             * console.log(`Fee: ${fee}`);
+             */
         }>;
         _getDepositTokenOnETHBasedChainTx(transaction: {
             token: string;
@@ -812,6 +843,7 @@ declare const L1Signer_base: {
             mintValue: BigNumberish;
             l2Value: BigNumberish;
         }>;
+        _getSecondBridgeCalldata(token: string, amount: BigNumberish, to: string): Promise<string>;
         _getDepositTxWithDefaults(transaction: {
             token: string;
             amount: BigNumberish;
@@ -883,6 +915,7 @@ declare const L1Signer_base: {
         }>;
         finalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
         getFinalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
+        getFinalizeDepositParams(withdrawalHash: BytesLike, index?: number): Promise<import("./types").FinalizeL1DepositParams>;
         finalizeWithdrawal(withdrawalHash: BytesLike, index?: number, overrides?: ethers.Overrides | undefined): Promise<ContractTransactionResponse>;
         isWithdrawalFinalized(withdrawalHash: BytesLike, index?: number): Promise<boolean>;
         claimFailedDeposit(depositHash: BytesLike, overrides?: ethers.Overrides | undefined): Promise<ContractTransactionResponse>;
@@ -1936,6 +1969,16 @@ declare const L1VoidSigner_base: {
         _providerL2(): Provider;
         _providerL1(): ethers.Provider;
         _signerL1(): ethers.Signer;
+        getDefaultBridgeAddresses(): Promise<{
+            erc20L1: string;
+            erc20L2: string;
+            wethL1: string;
+            wethL2: string;
+            sharedL1: string;
+            sharedL2: string;
+            l1Nullifier: string;
+            l1NativeTokenVault: string;
+        }>;
         getMainContract(): Promise<IZkSyncHyperchain>;
         getBridgehubContract(): Promise<IBridgehub>;
         getL1BridgeContracts(): Promise<{
@@ -1943,6 +1986,9 @@ declare const L1VoidSigner_base: {
             weth: IL1ERC20Bridge;
             shared: IL1SharedBridge;
         }>;
+        getL1AssetRouter(address?: string | undefined): Promise<import("./typechain").IL1AssetRouter>;
+        getL1NativeTokenVault(): Promise<import("./typechain").IL1NativeTokenVault>;
+        getL1Nullifier(): Promise<import("./typechain").IL1Nullifier>;
         getBaseToken(): Promise<string>;
         isETHBasedChain(): Promise<boolean>;
         getBalanceL1(token?: string | undefined, blockTag?: BlockTag | undefined): Promise<bigint>;
@@ -1970,6 +2016,25 @@ declare const L1VoidSigner_base: {
             approveERC20?: boolean | undefined;
             approveBaseERC20?: boolean | undefined;
             l2GasLimit?: BigNumberish | undefined;
+            /**
+             * Creates a new Singer with provided `signer` and `chainId`.
+             *
+             * @param signer  The signer from browser wallet.
+             * @param chainId The chain ID of the network.
+             * @param [zksyncProvider] The provider instance for connecting to a L2 network. If not provided,
+             * the methods from the `zks` namespace are not supported, and interaction with them will result in an error.
+             *
+             * @example
+             *
+             * import { BrowserProvider, Provider, types } from "zksync-ethers";
+             *
+             * const browserProvider = new BrowserProvider(window.ethereum);
+             * const signer = Signer.from(
+             *     await browserProvider.getSigner(),
+             *     Number((await browserProvider.getNetwork()).chainId),
+             *     Provider.getDefaultProvider(types.Network.Sepolia)
+             * );
+             */
             gasPerPubdataByte?: BigNumberish | undefined;
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
@@ -1998,22 +2063,7 @@ declare const L1VoidSigner_base: {
             amount: BigNumberish;
             to?: string | undefined;
             operatorTip?: BigNumberish | undefined;
-            bridgeAddress?: string | undefined; /**
-             * Get the number of transactions ever sent for account, which is used as the `nonce` when sending a transaction.
-             *
-             * @param [blockTag] The block tag to query. If provided, the transaction count is as of that block.
-             *
-             * import { BrowserProvider, Provider, types } from "zksync-ethers";
-             *
-             * const browserProvider = new BrowserProvider(window.ethereum);
-             * const signer = Signer.from(
-             *     await browserProvider.getSigner(),
-             *     Number((await browserProvider.getNetwork()).chainId),
-             *     Provider.getDefaultProvider(types.Network.Sepolia)
-             * );
-             *
-             * const nonce = await signer.getNonce();
-             */
+            bridgeAddress?: string | undefined;
             approveERC20?: boolean | undefined;
             approveBaseERC20?: boolean | undefined;
             l2GasLimit?: BigNumberish | undefined;
@@ -2053,12 +2103,6 @@ declare const L1VoidSigner_base: {
             refundRecipient?: string | undefined;
             overrides?: ethers.Overrides | undefined;
             approveOverrides?: ethers.Overrides | undefined;
-            /**
-             * A `L1Signer` is designed for frontend use with browser wallet injection (e.g., MetaMask),
-             * providing only L1 operations.
-             *
-             * @see {@link Signer} for L2 operations.
-             */
             approveBaseOverrides?: ethers.Overrides | undefined;
             customBridgeData?: BytesLike | undefined;
         }): Promise<PriorityOpResponse>;
@@ -2160,7 +2204,27 @@ declare const L1VoidSigner_base: {
             overrides?: ethers.Overrides | undefined;
         }): Promise<{
             tx: ethers.ContractTransaction;
-            mintValue: bigint;
+            mintValue: bigint; /**
+             * @inheritDoc
+             *
+             * @example
+             *
+             * import { Provider, L1Signer, Wallet, types } from "zksync-ethers";
+             * import { ethers } from "ethers";
+             *
+             * const browserProvider = new ethers.BrowserProvider(window.ethereum);
+             * const signer = L1Signer.from(
+             *     await browserProvider.getSigner(),
+             *     Provider.getDefaultProvider(types.Network.Sepolia)
+             * );
+             *
+             * const tokenL1 = "0x56E69Fa1BB0d1402c89E3A4E3417882DeA6B14Be";
+             * const fee = await signer.getFullRequiredDepositFee({
+             *   token: tokenL1,
+             *   to: Wallet.createRandom().address,
+             * });
+             * console.log(`Fee: ${fee}`);
+             */
         }>;
         _getDepositTokenOnETHBasedChainTx(transaction: {
             token: string;
@@ -2201,6 +2265,7 @@ declare const L1VoidSigner_base: {
             mintValue: BigNumberish;
             l2Value: BigNumberish;
         }>;
+        _getSecondBridgeCalldata(token: string, amount: BigNumberish, to: string): Promise<string>;
         _getDepositTxWithDefaults(transaction: {
             token: string;
             amount: BigNumberish;
@@ -2272,6 +2337,7 @@ declare const L1VoidSigner_base: {
         }>;
         finalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
         getFinalizeWithdrawalParams(withdrawalHash: BytesLike, index?: number): Promise<FinalizeWithdrawalParams>;
+        getFinalizeDepositParams(withdrawalHash: BytesLike, index?: number): Promise<import("./types").FinalizeL1DepositParams>;
         finalizeWithdrawal(withdrawalHash: BytesLike, index?: number, overrides?: ethers.Overrides | undefined): Promise<ContractTransactionResponse>;
         isWithdrawalFinalized(withdrawalHash: BytesLike, index?: number): Promise<boolean>;
         claimFailedDeposit(depositHash: BytesLike, overrides?: ethers.Overrides | undefined): Promise<ContractTransactionResponse>;

@@ -328,6 +328,10 @@ function JsonRpcApiProvider(ProviderType) {
                 sharedL2: this.contractAddresses().sharedBridgeL2,
             };
         }
+        _setL1NullifierAndNativeTokenVault(l1Nullifier, l1NativeTokenVault) {
+            this.contractAddresses().l1Nullifier = l1Nullifier;
+            this.contractAddresses().l1NativeTokenVault = l1NativeTokenVault;
+        }
         /**
          * Returns contract wrapper. If given address is shared bridge address it returns Il2SharedBridge and if its legacy it returns Il2Bridge.
          **
@@ -345,6 +349,12 @@ function JsonRpcApiProvider(ProviderType) {
                 return typechain_1.IL2Bridge__factory.connect(address, this);
             }
             return typechain_1.IL2SharedBridge__factory.connect(address, this);
+        }
+        async connectL2NativeTokenVault() {
+            return typechain_1.IL2NativeTokenVault__factory.connect(utils_1.L2_NATIVE_TOKEN_VAULT_ADDRESS, this);
+        }
+        async connectL2AssetRouter() {
+            return typechain_1.IL2AssetRouter__factory.connect(utils_1.L2_ASSET_ROUTER_ADDRESS, this);
         }
         /**
          * Returns true if passed bridge address is legacy and false if its shared bridge.
@@ -561,12 +571,34 @@ function JsonRpcApiProvider(ProviderType) {
                 }
                 return populatedTx;
             }
+            let populatedTx;
+            // we get the tokens data, assetId and originChainId
+            const ntv = await this.connectL2NativeTokenVault();
+            const assetId = await ntv.assetId(tx.token);
+            const originChainId = await ntv.originChainId(assetId);
+            const l1ChainId = await this.getL1ChainId();
+            const isTokenL1Native = originChainId === BigInt(l1ChainId) ||
+                tx.token === utils_1.ETH_ADDRESS_IN_CONTRACTS;
             if (!tx.bridgeAddress) {
                 const bridgeAddresses = await this.getDefaultBridgeAddresses();
-                tx.bridgeAddress = bridgeAddresses.sharedL2;
+                // If the legacy L2SharedBridge is deployed we use it for l1 native tokens.
+                tx.bridgeAddress = isTokenL1Native
+                    ? bridgeAddresses.sharedL2
+                    : utils_1.L2_ASSET_ROUTER_ADDRESS;
             }
-            const bridge = await this.connectL2Bridge(tx.bridgeAddress);
-            const populatedTx = await bridge.withdraw.populateTransaction(tx.to, tx.token, tx.amount, tx.overrides);
+            // For non L1 native tokens we need to use the AssetRouter.
+            // For L1 native tokens we can use the legacy withdraw method.
+            if (!isTokenL1Native) {
+                const bridge = await this.connectL2AssetRouter();
+                const chainId = Number((await this.getNetwork()).chainId);
+                const assetId = (0, utils_1.encodeNativeTokenVaultAssetId)(BigInt(chainId), tx.token);
+                const assetData = (0, utils_1.encodeNativeTokenVaultTransferData)(BigInt(tx.amount), tx.to, tx.token);
+                populatedTx = await bridge.withdraw.populateTransaction(assetId, assetData, tx.overrides);
+            }
+            else {
+                const bridge = await this.connectL2Bridge(tx.bridgeAddress);
+                populatedTx = await bridge.withdraw.populateTransaction(tx.to, tx.token, tx.amount, tx.overrides);
+            }
             if (tx.paymasterParams) {
                 return {
                     ...populatedTx,
@@ -854,9 +886,7 @@ function JsonRpcApiProvider(ProviderType) {
                 const l1BridgeAddress = bridgeAddresses.sharedL1;
                 const l2BridgeAddress = bridgeAddresses.sharedL2;
                 const bridgeData = await (0, utils_1.getERC20DefaultBridgeData)(token, providerL1);
-                return await this.estimateCustomBridgeDepositL2Gas(l1BridgeAddress, l2BridgeAddress, (0, utils_1.isAddressEq)(token, utils_1.LEGACY_ETH_ADDRESS)
-                    ? utils_1.ETH_ADDRESS_IN_CONTRACTS
-                    : token, amount, to, bridgeData, from, gasPerPubdataByte, value);
+                return await this.estimateCustomBridgeDepositL2Gas(l1BridgeAddress, l2BridgeAddress, token, amount, to, bridgeData, from, gasPerPubdataByte, value);
             }
         }
         /**
