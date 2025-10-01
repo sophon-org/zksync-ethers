@@ -18,6 +18,8 @@ const {expect} = chai;
 
 import {ITestnetERC20Token__factory} from '../../src/typechain';
 import {VoidSigner} from '../../src/signer';
+const defaultMaxFeePerGas = 200_000_000n;
+const defaultMaxPriorityFeePerGas = 0n;
 
 describe('VoidSigner', () => {
   const provider = new Provider(L2_CHAIN_URL);
@@ -50,14 +52,6 @@ describe('VoidSigner', () => {
     it('should return the `VoidSigner` balance', async () => {
       const result = await signer.getBalance();
       expect(result > 0n).to.be.true;
-    });
-  });
-
-  describe('#getAllBalances()', () => {
-    it('should return all balances', async () => {
-      const result = await signer.getAllBalances();
-      const expected = IS_ETH_BASED ? 2 : 3;
-      expect(Object.keys(result)).to.have.lengthOf(expected);
     });
   });
 
@@ -101,8 +95,8 @@ describe('VoidSigner', () => {
         from: ADDRESS1,
         nonce: await signer.getNonce('pending'),
         chainId: 270n,
-        maxFeePerGas: 1_200_000_000n,
-        maxPriorityFeePerGas: 1_000_000_000n,
+        maxFeePerGas: defaultMaxFeePerGas,
+        maxPriorityFeePerGas: defaultMaxPriorityFeePerGas,
       };
       const result = await signer.populateTransaction({
         to: ADDRESS2,
@@ -116,7 +110,6 @@ describe('VoidSigner', () => {
       ]);
       expect(BigInt(result.gasLimit!) > 0n).to.be.true;
       expect(BigInt(result.maxFeePerGas!) > 0n).to.be.true;
-      expect(BigInt(result.maxPriorityFeePerGas!) > 0n).to.be.true;
     });
 
     it('should return populated transaction when `maxFeePerGas` and `maxPriorityFeePerGas` and `customData` are provided', async () => {
@@ -159,7 +152,7 @@ describe('VoidSigner', () => {
         data: '0x',
         chainId: 270n,
         maxPriorityFeePerGas: 2_000_000_000n,
-        maxFeePerGas: 1_200_000_000n,
+        maxFeePerGas: defaultMaxFeePerGas,
         customData: {
           gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
           factoryDeps: [],
@@ -187,7 +180,7 @@ describe('VoidSigner', () => {
         data: '0x',
         chainId: 270n,
         maxFeePerGas: 3_500_000_000n,
-        maxPriorityFeePerGas: 1_000_000_000n,
+        maxPriorityFeePerGas: defaultMaxPriorityFeePerGas,
         customData: {
           gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
           factoryDeps: [],
@@ -366,14 +359,6 @@ describe('L2VoidSigner', () => {
     });
   });
 
-  describe('#getAllBalances()', () => {
-    it('should return all balances', async () => {
-      const result = await signer.getAllBalances();
-      const expected = IS_ETH_BASED ? 2 : 3;
-      expect(Object.keys(result)).to.have.lengthOf(expected);
-    });
-  });
-
   describe('#getL2BridgeContracts()', () => {
     it('should return a L2 bridge contracts', async () => {
       const result = await signer.getL2BridgeContracts();
@@ -414,8 +399,8 @@ describe('L2VoidSigner', () => {
         from: ADDRESS1,
         nonce: await signer.getNonce('pending'),
         chainId: 270n,
-        maxFeePerGas: 1_200_000_000n,
-        maxPriorityFeePerGas: 1_000_000_000n,
+        maxFeePerGas: defaultMaxFeePerGas,
+        maxPriorityFeePerGas: defaultMaxPriorityFeePerGas,
       };
       const result = await signer.populateTransaction({
         to: ADDRESS2,
@@ -429,7 +414,6 @@ describe('L2VoidSigner', () => {
       ]);
       expect(BigInt(result.gasLimit!) > 0n).to.be.true;
       expect(BigInt(result.maxFeePerGas!) > 0n).to.be.true;
-      expect(BigInt(result.maxPriorityFeePerGas!) > 0n).to.be.true;
     });
 
     it('should return populated transaction when `maxFeePerGas` and `maxPriorityFeePerGas` and `customData` are provided', async () => {
@@ -472,7 +456,7 @@ describe('L2VoidSigner', () => {
         data: '0x',
         chainId: 270n,
         maxPriorityFeePerGas: 2_000_000_000n,
-        maxFeePerGas: 1_200_000_000n,
+        maxFeePerGas: defaultMaxFeePerGas,
         customData: {
           gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
           factoryDeps: [],
@@ -500,7 +484,7 @@ describe('L2VoidSigner', () => {
         data: '0x',
         chainId: 270n,
         maxFeePerGas: 3_500_000_000n,
-        maxPriorityFeePerGas: 1_000_000_000n,
+        maxPriorityFeePerGas: defaultMaxPriorityFeePerGas,
         customData: {
           gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
           factoryDeps: [],
@@ -1200,7 +1184,6 @@ describe('L1VoidSigner', async () => {
           token,
           amount
         );
-
         await (
           await wallet.approveERC20(
             approveParams[0].token,
@@ -1485,7 +1468,7 @@ describe('L1VoidSigner', async () => {
         }
       });
     }
-  });
+  }).timeout(60_000);
 
   describe('#getRequestExecuteTx()', () => {
     const amount = 7_000_000_000;

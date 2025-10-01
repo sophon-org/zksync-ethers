@@ -1,4 +1,11 @@
-import {AbiCoder, BigNumberish, BytesLike, ethers, SignatureLike} from 'ethers';
+import {
+  AbiCoder,
+  BigNumberish,
+  BytesLike,
+  ethers,
+  SignatureLike,
+  resolveProperties,
+} from 'ethers';
 import {
   Address,
   DeploymentInfo,
@@ -14,7 +21,7 @@ import {
 } from './types';
 import {Provider} from './provider';
 import {EIP712Signer} from './signer';
-import {IERC20__factory} from './typechain';
+import {IERC20__factory, IL1NativeTokenVault} from './typechain';
 import IZkSyncABI from '../abi/IZkSyncHyperchain.json';
 import IBridgehubABI from '../abi/IBridgehub.json';
 import IContractDeployerABI from '../abi/IContractDeployer.json';
@@ -25,6 +32,8 @@ import IERC1271ABI from '../abi/IERC1271.json';
 import IL1BridgeABI from '../abi/IL1ERC20Bridge.json';
 import IL2BridgeABI from '../abi/IL2Bridge.json';
 import INonceHolderABI from '../abi/INonceHolder.json';
+import L2MessageVerificationABI from '../abi/L2MessageVerification.json';
+import L2InteropRootStorageABI from '../abi/L2InteropRootStorage.json';
 
 export * from './paymaster-utils';
 export * from './smart-account-utils';
@@ -89,6 +98,22 @@ export const L2_BRIDGE_ABI = new ethers.Interface(IL2BridgeABI);
  * @readonly
  */
 export const NONCE_HOLDER_ABI = new ethers.Interface(INonceHolderABI);
+
+/**
+ * The ABI for the `L2MessageVerification` interface.
+ * @readonly
+ */
+export const L2_MESSAGE_VERIFICATION_ABI = new ethers.Interface(
+  L2MessageVerificationABI
+);
+
+/**
+ * The ABI for the `L2InteropRootStorage` interface.
+ * @readonly
+ */
+export const L2_INTEROP_ROOT_STORAGE_ABI = new ethers.Interface(
+  L2InteropRootStorageABI
+);
 
 /**
  * The address of the L1 `ETH` token.
@@ -168,6 +193,26 @@ export const NONCE_HOLDER_ADDRESS: Address =
 export const L1_TO_L2_ALIAS_OFFSET: Address =
   '0x1111000000000000000000000000000000001111';
 
+export const L2_ASSET_ROUTER_ADDRESS: Address =
+  '0x0000000000000000000000000000000000010003';
+
+export const L2_NATIVE_TOKEN_VAULT_ADDRESS: Address =
+  '0x0000000000000000000000000000000000010004';
+
+/**
+ * The address of the L2 Message Verification.
+ * @readonly
+ */
+export const L2_MESSAGE_VERIFICATION_ADDRESS: Address =
+  '0x0000000000000000000000000000000000010009';
+
+/**
+ * The address of the L2 Interop Root Storage.
+ * @readonly
+ */
+export const L2_INTEROP_ROOT_STORAGE_ADDRESS: Address =
+  '0x0000000000000000000000000000000000010008';
+
 /**
  * The EIP1271 magic value used for signature validation in smart contracts.
  * This predefined constant serves as a standardized indicator to signal successful
@@ -224,7 +269,7 @@ export const L1_FEE_ESTIMATION_COEF_DENOMINATOR = 10;
  *
  * @readonly
  */
-export const L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 400_000;
+export const L1_RECOMMENDED_MIN_ERC20_DEPOSIT_GAS_LIMIT = 1_000_000;
 
 /**
  * Gas limit used for displaying the error messages when the
@@ -557,7 +602,7 @@ export function serializeEip712(
 
   // Add meta
   fields.push(
-    ethers.toBeArray(meta.gasPerPubdata || DEFAULT_GAS_PER_PUBDATA_LIMIT)
+    ethers.toBeArray(meta.gasPerPubdata ?? DEFAULT_GAS_PER_PUBDATA_LIMIT)
   );
   fields.push((meta.factoryDeps ?? []).map(dep => ethers.hexlify(dep)));
 
@@ -1399,6 +1444,9 @@ export async function estimateDefaultBridgeDepositL2Gas(
   // due to storage slot aggregation, the gas estimation will depend on the address
   // and so estimation for the zero address may be smaller than for the sender.
   from ??= ethers.Wallet.createRandom().address;
+  token = isAddressEq(token, LEGACY_ETH_ADDRESS)
+    ? ETH_ADDRESS_IN_CONTRACTS
+    : token;
   if (await providerL2.isBaseToken(token)) {
     return await providerL2.estimateL1ToL2Execute({
       contractAddress: to,
@@ -1419,7 +1467,7 @@ export async function estimateDefaultBridgeDepositL2Gas(
       providerL2,
       l1BridgeAddress,
       l2BridgeAddress,
-      isAddressEq(token, LEGACY_ETH_ADDRESS) ? ETH_ADDRESS_IN_CONTRACTS : token,
+      token,
       amount,
       to,
       bridgeData,
@@ -1577,4 +1625,159 @@ export function toJSON(object: any): string {
  */
 export function isAddressEq(a: Address, b: Address): boolean {
   return a.toLowerCase() === b.toLowerCase();
+}
+
+/* Returns the assetId for a token in the Native Token Vault with specific origin chainId and address*/
+export function encodeNativeTokenVaultAssetId(
+  chainId: bigint,
+  address: string
+) {
+  const abi = new AbiCoder();
+  const hex = abi.encode(
+    ['uint256', 'address', 'address'],
+    [chainId, L2_NATIVE_TOKEN_VAULT_ADDRESS, address]
+  );
+  return ethers.keccak256(hex);
+}
+
+/**
+ * Resolves the assetId for a token
+ **/
+export async function resolveAssetId(
+  token: Address,
+  ntvContract: IL1NativeTokenVault
+): Promise<BytesLike> {
+  if (isAddressEq(token, LEGACY_ETH_ADDRESS)) {
+    token = ETH_ADDRESS_IN_CONTRACTS;
+  }
+
+  // In case only token is provided, we expect that it is a token inside Native Token Vault
+  const assetIdFromNTV = await ntvContract.assetId(token);
+
+  if (assetIdFromNTV && assetIdFromNTV !== ethers.ZeroHash) {
+    return assetIdFromNTV;
+  }
+
+  // Okay, the token have not been registered within the Native token vault.
+  // There are two cases when it is possible:
+  // - The token is native to L1 (it may or may not be bridged), but it has not been
+  // registered within NTV after the Gateway upgrade. We assume that this is not the case
+  // as the SDK is expected to work only after the full migration is done.
+  // - The token is native to the current chain and it has never been bridged.
+
+  const network = await ntvContract.runner?.provider?.getNetwork();
+
+  if (!network) {
+    throw new Error('Can not derive assetId since chainId is not available');
+  }
+
+  const ntvAssetId = encodeNativeTokenVaultAssetId(network.chainId, token);
+
+  return ntvAssetId;
+}
+
+/**
+ * Encodes the data for a transfer of a token through the Native Token Vault
+ *
+ * @param {bigint} amount The amount of tokens to transfer
+ * @param {Address} receiver The address that will receive the tokens
+ * @param {Address} token The address of the token being transferred
+ * @returns {string} The ABI-encoded transfer data
+ **/
+export function encodeNativeTokenVaultTransferData(
+  amount: bigint,
+  receiver: Address,
+  token: Address
+) {
+  return new AbiCoder().encode(
+    ['uint256', 'address', 'address'],
+    [amount, receiver, token]
+  );
+}
+
+/**
+ * Encodes asset transfer data for BridgeHub contract, using v1 encoding scheme (introduced in v26 upgrade).
+ * Can be utilized to encode deposit initiation data.
+ *
+ * @param {string} assetId - encoded token asset ID
+ * @param {string} transferData - encoded transfer data, see `encodeNativeTokenVaultTransferData`
+ */ export function encodeSecondBridgeDataV1(
+  assetId: string,
+  transferData: string
+) {
+  const abi = new AbiCoder();
+  const data = abi.encode(['bytes32', 'bytes'], [assetId, transferData]);
+
+  return ethers.concat(['0x01', data]);
+}
+
+export function encodeNTVAssetId(chainId: bigint, address: string) {
+  const abi = new AbiCoder();
+  const hex = abi.encode(
+    ['uint256', 'address', 'address'],
+    [chainId, L2_NATIVE_TOKEN_VAULT_ADDRESS, address]
+  );
+  return ethers.keccak256(hex);
+}
+
+export async function ethAssetId(provider: ethers.Provider) {
+  const network = await provider.getNetwork();
+
+  return encodeNTVAssetId(network.chainId, ETH_ADDRESS_IN_CONTRACTS);
+}
+
+interface WithToken {
+  token: Address;
+}
+
+interface WithAssetId {
+  assetId: BytesLike;
+}
+
+// For backwards compatibility and easier interface lots of methods
+// will continue to allow providing either token or assetId
+export type WithTokenOrAssetId = WithToken | WithAssetId;
+
+export function encodeNTVTransferData(
+  amount: bigint,
+  receiver: Address,
+  token: Address
+) {
+  return new AbiCoder().encode(
+    ['uint256', 'address', 'address'],
+    [amount, receiver, token]
+  );
+}
+
+export async function resolveFeeData(
+  tx: TransactionLike,
+  provider: Provider,
+  providerL2?: Provider
+): Promise<{
+  gasLimit: BigNumberish;
+  gasPrice: BigNumberish;
+  gasPerPubdata: BigNumberish | undefined;
+}> {
+  // Race all requests against each other so that ethers batches them if it can
+  return await resolveProperties({
+    gasLimit: (async () => tx.gasLimit ?? (await provider.estimateGas(tx)))(),
+    gasPrice: (async () =>
+      tx.gasPrice ?? tx.maxFeePerGas ?? (await provider.getGasPrice()))(),
+    gasPerPubdata: (async () => {
+      if (
+        tx.type === null ||
+        tx.type === undefined ||
+        tx.type === EIP712_TX_TYPE ||
+        tx.customData
+      ) {
+        return (
+          tx.customData?.gasPerPubdata ??
+          // `zks_gasPerPubdata` should not go through proxied provider if
+          // there is one (e.g. MetaMask does not forward `zks` requests).
+          (await (providerL2 ?? provider).getGasPerPubdata())
+        );
+      }
+      return undefined;
+    })(),
+  });
 }

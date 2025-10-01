@@ -15,3 +15,16 @@ export {
 } from './smart-account';
 export {BrowserProvider, Provider} from './provider';
 export {ContractFactory, Contract} from './contract';
+export {
+  AbstractBridge,
+  IDepositTransaction,
+  IWithdrawTransaction,
+} from './bridges/abstractBridge';
+export {USDCBridge} from './bridges/usdcBridge';
+export {InteropClient, resolveGateway, GATEWAY_PRESETS} from './interop-client';
+export {
+  findInteropLogIndex,
+  getGatewayProof,
+  getGwBlockForBatch,
+  waitForGatewayInteropRoot,
+} from './interop-utils';

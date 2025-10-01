@@ -1,6 +1,6 @@
 import {EIP712Signer} from './signer';
 import {Provider} from './provider';
-import {EIP712_TX_TYPE, serializeEip712} from './utils';
+import {EIP712_TX_TYPE, resolveFeeData, serializeEip712} from './utils';
 import {
   BigNumberish,
   BlockTag,
@@ -13,9 +13,10 @@ import {
 import {
   Address,
   BalancesMap,
-  Fee,
+  FinalizeL1DepositParams,
   FinalizeWithdrawalParams,
   FullDepositFee,
+  InteropMode,
   PaymasterParams,
   PriorityOpResponse,
   TransactionLike,
@@ -700,9 +701,21 @@ export class Wallet extends AdapterL2(AdapterL1(ethers.Wallet)) {
    */
   override async getFinalizeWithdrawalParams(
     withdrawalHash: BytesLike,
-    index = 0
+    index = 0,
+    interopMode?: InteropMode
   ): Promise<FinalizeWithdrawalParams> {
-    return super.getFinalizeWithdrawalParams(withdrawalHash, index);
+    return super.getFinalizeWithdrawalParams(
+      withdrawalHash,
+      index,
+      interopMode
+    );
+  }
+
+  override async getFinalizeDepositParams(
+    withdrawalHash: BytesLike,
+    index = 0
+  ): Promise<FinalizeL1DepositParams> {
+    return super.getFinalizeDepositParams(withdrawalHash, index);
   }
 
   /**
@@ -1462,24 +1475,16 @@ export class Wallet extends AdapterL2(AdapterL1(ethers.Wallet)) {
         'Provide combination of maxFeePerGas and maxPriorityFeePerGas or provide gasPrice. Not both!'
       );
     }
-    let fee: Fee;
-    if (
-      !populated.gasLimit ||
-      !tx.customData ||
-      !tx.customData.gasPerPubdata ||
-      (!populated.gasPrice &&
-        (!populated.maxFeePerGas ||
-          populated.maxPriorityFeePerGas === null ||
-          populated.maxPriorityFeePerGas === undefined))
-    ) {
-      fee = await this.provider.estimateFee(populated);
-      populated.gasLimit ??= fee.gasLimit;
-      if (!populated.gasPrice && populated.type === 0) {
-        populated.gasPrice = fee.maxFeePerGas;
-      } else if (!populated.gasPrice && populated.type !== 0) {
-        populated.maxFeePerGas ??= fee.maxFeePerGas;
-        populated.maxPriorityFeePerGas ??= fee.maxPriorityFeePerGas;
-      }
+    const {gasLimit, gasPrice, gasPerPubdata} = await resolveFeeData(
+      populated,
+      this.provider
+    );
+    populated.gasLimit = gasLimit;
+    if (!populated.gasPrice && populated.type === 0) {
+      populated.gasPrice = gasPrice;
+    } else if (!populated.gasPrice && populated.type !== 0) {
+      populated.maxFeePerGas = gasPrice;
+      populated.maxPriorityFeePerGas ??= BigInt(0);
     }
     if (
       tx.type === null ||
@@ -1488,11 +1493,11 @@ export class Wallet extends AdapterL2(AdapterL1(ethers.Wallet)) {
       tx.customData
     ) {
       tx.customData ??= {};
-      tx.customData.gasPerPubdata ??= fee!.gasPerPubdataLimit;
+      tx.customData.gasPerPubdata = gasPerPubdata;
       populated.type = EIP712_TX_TYPE;
       populated.value ??= 0;
       populated.data ??= '0x';
-      populated.customData = this._fillCustomData(tx.customData);
+      populated.customData = this._fillCustomData(tx.customData ?? {});
       populated.nonce = populated.nonce ?? (await this.getNonce('pending'));
       populated.chainId =
         populated.chainId ?? (await this.provider.getNetwork()).chainId;

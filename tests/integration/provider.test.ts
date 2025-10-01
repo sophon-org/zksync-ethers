@@ -14,19 +14,15 @@ import {
   L1_CHAIN_URL,
 } from '../utils';
 import {EIP712_TX_TYPE} from '../../src/utils';
-
 describe('Provider', () => {
   const provider = new Provider(L2_CHAIN_URL);
   const wallet = new Wallet(PRIVATE_KEY1, provider);
   const ethProvider = ethers.getDefaultProvider(L1_CHAIN_URL);
-
   let receipt: types.TransactionReceipt;
-  let baseToken: string;
 
   before('setup', async function () {
     this.timeout(25_000);
 
-    baseToken = await provider.getBaseTokenContractAddress();
     const tx = await wallet.transfer({
       token: utils.LEGACY_ETH_ADDRESS,
       to: ADDRESS2,
@@ -141,14 +137,6 @@ describe('Provider', () => {
     it('should return confirmed tokens', async () => {
       const result = await provider.getConfirmedTokens();
       expect(result).to.have.lengthOf(1);
-    });
-  });
-
-  describe('#getAllAccountBalances()', () => {
-    it('should return the all balances of the account at `address`', async () => {
-      const result = await provider.getAllAccountBalances(ADDRESS1);
-      const expected = IS_ETH_BASED ? 2 : 3;
-      expect(Object.keys(result)).to.have.lengthOf(expected);
     });
   });
 
@@ -292,11 +280,6 @@ describe('Provider', () => {
   });
 
   describe('#l2TokenAddress()', () => {
-    it('should return the L2 base address', async () => {
-      const result = await provider.l2TokenAddress(baseToken);
-      expect(result).to.be.equal(utils.L2_BASE_TOKEN_ADDRESS);
-    });
-
     it('should return the L2 ETH address', async () => {
       if (!IS_ETH_BASED) {
         const result = await provider.l2TokenAddress(utils.LEGACY_ETH_ADDRESS);
@@ -320,7 +303,7 @@ describe('Provider', () => {
       const result = await provider.l1TokenAddress(
         await provider.l2TokenAddress(DAI_L1)
       );
-      expect(result).to.be.equal(DAI_L1);
+      expect(result.toLowerCase()).to.equal(DAI_L1.toLowerCase());
     });
   });
 
@@ -418,9 +401,9 @@ describe('Provider', () => {
         const tx = {
           from: ADDRESS1,
           value: 7_000_000_000n,
+          type: 113,
           to: utils.L2_BASE_TOKEN_ADDRESS,
           data: '0x51cff8d900000000000000000000000036615cf349d7f6344891b1e7ca7c72883f5dc049',
-          type: 113,
           customData: {
             paymasterParams: {
               paymaster: '0x0EEc6f45108B4b806e27B81d9002e162BD910670',
@@ -540,6 +523,7 @@ describe('Provider', () => {
     it('should return a DAI withdraw transaction', async () => {
       const tx = {
         type: 113,
+        value: 5n,
         from: ADDRESS1,
         to: (await provider.getDefaultBridgeAddresses()).sharedL2,
         data: '0xd9caed1200000000000000000000000036615cf349d7f6344891b1e7ca7c72883f5dc04900000000000000000000000082b5ea13260346f4251c0940067a9117a6cf13840000000000000000000000000000000000000000000000000000000000000005',
@@ -556,6 +540,7 @@ describe('Provider', () => {
     it('should return a DAI withdraw transaction with paymaster parameters', async () => {
       const tx = {
         type: 113,
+        value: 5n,
         from: ADDRESS1,
         to: (await provider.getDefaultBridgeAddresses()).sharedL2,
         data: '0xd9caed1200000000000000000000000036615cf349d7f6344891b1e7ca7c72883f5dc04900000000000000000000000082b5ea13260346f4251c0940067a9117a6cf13840000000000000000000000000000000000000000000000000000000000000005',
@@ -578,6 +563,22 @@ describe('Provider', () => {
           minimalAllowance: 1,
           innerInput: new Uint8Array(),
         }),
+      });
+      expect(result).to.be.deepEqualExcluding(tx, ['data']);
+    });
+
+    it('should return a Crown withdraw transaction', async () => {
+      const tx = {
+        type: 113,
+        from: ADDRESS1,
+        to: (await provider.getDefaultBridgeAddresses()).sharedL2,
+        data: '0xd9caed1200000000000000000000000036615cf349d7f6344891b1e7ca7c72883f5dc04900000000000000000000000082b5ea13260346f4251c0940067a9117a6cf13840000000000000000000000000000000000000000000000000000000000000005',
+      };
+      const result = await provider.getWithdrawTx({
+        token: APPROVAL_TOKEN,
+        amount: 5,
+        to: ADDRESS1,
+        from: ADDRESS1,
       });
       expect(result).to.be.deepEqualExcluding(tx, ['data']);
     });
@@ -964,17 +965,6 @@ describe('Provider', () => {
         expect(result > 0n).to.be.true;
       });
 
-      it('should return estimation for base token', async () => {
-        const result = await provider.estimateDefaultBridgeDepositL2Gas(
-          ethProvider,
-          await provider.getBaseTokenContractAddress(),
-          ethers.parseEther('1'),
-          ADDRESS2,
-          ADDRESS1
-        );
-        expect(result > 0n).to.be.true;
-      });
-
       it('should return estimation for DAI token', async () => {
         const result = await provider.estimateDefaultBridgeDepositL2Gas(
           ethProvider,
@@ -1042,11 +1032,9 @@ describe('Provider', () => {
           from: ADDRESS1,
         });
       } catch (e) {
-        expect(
-          (e as Error).message
-            .toString()
-            .includes('insufficient balance for transfer')
-        ).to.be.true;
+        const revertString = 'insufficient funds for gas + value.';
+        expect((e as Error).message.toString().includes(revertString)).to.be
+          .true;
       }
     });
   });

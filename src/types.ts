@@ -1,6 +1,7 @@
 import {
   assert,
   assertArgument,
+  AddressLike,
   BigNumberish,
   BytesLike,
   defineProperties,
@@ -104,6 +105,11 @@ export type DeploymentType =
   | 'createAccount'
   | 'create2'
   | 'create2Account';
+
+/** Interop modes are used to specify the target Merkle root for interop log proofs */
+export type InteropMode =
+  /** Proof-based interop on Gateway, meaning the Merkle proof hashes to Gateway's MessageRoot */
+  'proof_based_gw';
 
 /** Bridged token. */
 export interface Token {
@@ -1040,3 +1046,148 @@ export interface SmartAccountSigner {
   /** Custom method for populating transaction requests. */
   transactionBuilder?: TransactionBuilder;
 }
+
+/**
+ * Contains parameters for finalizing the L2->L1 deposit transaction.
+ * Pre V26 withdrawals were special kind of transaction,
+ * but starting from v26 any cross-chain token movement is called a deposit, regardless of direction
+ */
+export type FinalizeL1DepositParams = {
+  chainId: BigNumberish;
+  l2BatchNumber: BigNumberish;
+  l2MessageIndex: BigNumberish;
+  l2Sender: AddressLike;
+  l2TxNumberInBatch: BigNumberish;
+  message: BytesLike;
+  merkleProof: BytesLike[];
+};
+
+/**
+ * Gateway environment presets.
+ *
+ * @public
+ * @category Interop
+ */
+export type GatewayEnv = 'testnet' | 'mainnet' | 'local';
+
+/**
+ * Flexible Gateway configuration. Most users can omit this (defaults to the **testnet** preset).
+ *
+ * @public
+ * @category Interop
+ * @remarks
+ * Resolution precedence matches {@link resolveGateway}:
+ * 1) explicit `gwProvider` + `gwChainId`
+ * 2) `env` ('testnet' | 'mainnet') with optional overrides (`gwRpcUrl`, `gwChainId`)
+ * 3) `env: 'local'` requires **both** `gwRpcUrl` and `gwChainId` (or an explicit provider + chainId)
+ *
+ * @example
+ * ```ts
+ * // Testnet by default:
+ * const { gwProvider, gwChainId } = resolveGateway();
+ *
+ * // Mainnet preset:
+ * resolveGateway({ env: 'mainnet' });
+ *
+ * // Local dev:
+ * resolveGateway({ env: 'local', gwRpcUrl: 'http://localhost:3250', gwChainId: 506n });
+ * ```
+ */
+export interface GatewayConfig {
+  /** 'testnet' | 'mainnet' | 'local' (default: 'testnet') */
+  env?: GatewayEnv;
+  /** Explicit provider (wins over env/rpcUrl if provided) */
+  gwProvider?: ethers.JsonRpcProvider;
+  /** Explicit chain id (wins over env default if provided) */
+  gwChainId?: bigint;
+  /** RPC URL override for env presets or local */
+  gwRpcUrl?: string;
+}
+
+/**
+ * Result of sendMessage ({@link sendMessage}) on the source chain.
+ *
+ * @public
+ * @category Interop
+ */
+export interface Sent {
+  txHash: string;
+  l2ToL1LogIndex: number;
+  sender: Address;
+  messageHex: string;
+}
+
+/**
+ * Final result of {@link verifyMessage} / {@link sendMessageAndVerify}.
+ *
+ * @public
+ * @category Interop
+ * @remarks
+ * - `source` is a minimal description of the message origin (including a convenience `messageHash`).
+ * - `interopRoot` is the imported Gateway interop root observed on the target chain for the relevant Gateway block.
+ * - `verified` is the on-chain check result from `L2MessageVerification.proveL2MessageInclusionShared`.
+ * - `proof` is optional debug telemetry; enable via `includeProofInputs: true`.
+ */
+export interface InteropResult {
+  source: {
+    chainId: number;
+    txHash: string;
+    sender: Address;
+    messageHash: string;
+  };
+  interopRoot: string;
+  verified: boolean;
+
+  // Optional, only when includeProofInputs = true
+  proof?: {
+    l1BatchNumber: number;
+    l2MessageIndex: number;
+    l1BatchTxIndex: number;
+    l2ToL1LogIndex: number;
+    gwBlockNumber: bigint;
+  };
+}
+
+/**
+ * Possible phases of a batch lifecycle.
+ *
+ * @public
+ * @category Interop v29
+ */
+export type BatchPhase =
+  | 'QUEUED'
+  | 'SENDING'
+  | 'PROVING'
+  | 'EXECUTED'
+  | 'FAILED'
+  | 'REJECTED'
+  | 'UNKNOWN';
+
+/** Lite version of {@link TransactionDetails} with only fields relevant to tx status.
+ * @public
+ * @category Interop v29
+ */
+export type TxDetailsLite = {
+  status: 'included' | 'failed' | 'rejected' | string;
+  ethCommitTxHash: string | null;
+  ethProveTxHash: string | null;
+  ethExecuteTxHash: string | null;
+};
+
+/**
+ * Input arguments for proveL2MessageInclusionShared method on L2MessageVerification contract
+ *
+ * @public
+ * @category Interop v29
+ */
+export type ProveL2MessageInclusionSharedArgs = {
+  srcChainId: number;
+  l1BatchNumber: number;
+  l2MessageIndex: number;
+  msgData: {
+    txNumberInBatch: number;
+    sender: `0x${string}`;
+    data: `0x${string}`;
+  };
+  gatewayProof: string[];
+};

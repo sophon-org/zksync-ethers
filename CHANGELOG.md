@@ -1,3 +1,91 @@
+# [6.21.0](https://github.com/zksync-sdk/zksync-ethers/compare/v6.20.1...v6.21.0) (2025-09-18)
+
+
+### Bug Fixes
+
+* increase timeout on failing abs test ([d2cbf5f](https://github.com/zksync-sdk/zksync-ethers/commit/d2cbf5fe2d0a0364724853b8145637a0ee51a0ca))
+* minor param rename ([b372f7c](https://github.com/zksync-sdk/zksync-ethers/commit/b372f7c5924133c13dd63051d59003a0d2c817b7))
+* status options ([b67e4f1](https://github.com/zksync-sdk/zksync-ethers/commit/b67e4f1da8d8ec23a66553dd50309cbd7474e7f5))
+* support for messages sent in contracts ([344dbc5](https://github.com/zksync-sdk/zksync-ethers/commit/344dbc5f318d14ebce9af9a787362c90bebc13bd))
+* update for practical finalization ([4c1f6cb](https://github.com/zksync-sdk/zksync-ethers/commit/4c1f6cb161ad156ed51c72320fbafe990b04cd0d))
+* update to include message status checks for verification readiness, removes one shot method as its not practical. ([c1008ba](https://github.com/zksync-sdk/zksync-ethers/commit/c1008bae2e09940306edef34f62fcdc260d7b7e2))
+* verification ([a81f2cd](https://github.com/zksync-sdk/zksync-ethers/commit/a81f2cdbf6e5aaed8f48833187fabdb6b5039937))
+
+
+### Features
+
+* add getVerificationArgs method ([fca8ee3](https://github.com/zksync-sdk/zksync-ethers/commit/fca8ee3ebad14d5c627f27f4133fdb3c5f578c46))
+* adds interop class and helpers for easy usage of v29 interop ([0b927e3](https://github.com/zksync-sdk/zksync-ethers/commit/0b927e37fec502ad45788da11b055cf655d13cf4))
+
+## [6.20.1](https://github.com/zksync-sdk/zksync-ethers/compare/v6.20.0...v6.20.1) (2025-08-11)
+
+
+### Bug Fixes
+
+* improve usdc bridge methods visibility and docs ([#258](https://github.com/zksync-sdk/zksync-ethers/issues/258)) ([100ba13](https://github.com/zksync-sdk/zksync-ethers/commit/100ba135ba902b6195e234ca085a7dee2778c9d1))
+
+# [6.20.0](https://github.com/zksync-sdk/zksync-ethers/compare/v6.19.0...v6.20.0) (2025-07-30)
+
+
+### Bug Fixes
+
+* rename Bridge to AbstractBridge ([bd4f8bd](https://github.com/zksync-sdk/zksync-ethers/commit/bd4f8bdca0d58c5dee472f41b9e9a06c397f1e6e))
+
+
+### Features
+
+* add abstract bridge class ([b528ba6](https://github.com/zksync-sdk/zksync-ethers/commit/b528ba6b401d158994798695acbd9ceec8ead859))
+* add isWithdrawalFinalized function ([053bd34](https://github.com/zksync-sdk/zksync-ethers/commit/053bd343a2a3cb0b7c68a2bc44ec7d0b79de34ea))
+* add usdc bridge adapter ([d72208a](https://github.com/zksync-sdk/zksync-ethers/commit/d72208a69bc13cfade7e9722583942a8f8a4b2f1))
+
+# [6.19.0](https://github.com/zksync-sdk/zksync-ethers/compare/v6.18.0...v6.19.0) (2025-07-09)
+
+
+### Bug Fixes
+
+* use onchain data instead of RPC endpoints ([673bd25](https://github.com/zksync-sdk/zksync-ethers/commit/673bd250c7da110c719d2863b20933c80891a89e))
+
+
+### Features
+
+* avoid `zks_estimateFee` for populating fee data ([2425081](https://github.com/zksync-sdk/zksync-ethers/commit/24250819f6770cebe05311729e20da219e11c092))
+
+# [6.18.0](https://github.com/zksync-sdk/zksync-ethers/compare/v6.17.0...v6.18.0) (2025-06-17)
+
+
+### Bug Fixes
+
+* reduce the interop support for v29 ([ec7956e](https://github.com/zksync-sdk/zksync-ethers/commit/ec7956e1026bb81259c4d50d47c92e15fb3901de))
+
+
+### Features
+
+* deprecate `AdapterL2.getAllBalances` ([2e99421](https://github.com/zksync-sdk/zksync-ethers/commit/2e9942109fe1a9e5928b0f77282f38f6995a2fca))
+* deprecate `Provider.getAllAccountBalances` and `SmartAccount.getAllBalances` ([11ffd97](https://github.com/zksync-sdk/zksync-ethers/commit/11ffd977289fb217570b4973ea38e43d9af73f77))
+* deprecate `Provider.getConfirmedTokens` ([3ecca46](https://github.com/zksync-sdk/zksync-ethers/commit/3ecca46b153a92eb0fffcf42491ebbb7c6257e4c))
+* deprecate `Provider.getProtocolVersion` ([92774b7](https://github.com/zksync-sdk/zksync-ethers/commit/92774b7316e40db3ba79814d10aac48c52182479))
+* deprecate `Provider.sendRawTransactionWithDetailedOutput` ([31fb72d](https://github.com/zksync-sdk/zksync-ethers/commit/31fb72d1c62e2183fba1babad1d52b545b78e5a4))
+
+# [6.17.0](https://github.com/zksync-sdk/zksync-ethers/compare/v6.16.2...v6.17.0) (2025-03-31)
+
+
+### Features
+
+* **adapter:** squashed all changes ([0dbd059](https://github.com/zksync-sdk/zksync-ethers/commit/0dbd059cbc62c1a15e30a728246e64a5ee792c61))
+* support v26, remove support for v25 ([#243](https://github.com/zksync-sdk/zksync-ethers/issues/243)) ([55803e8](https://github.com/zksync-sdk/zksync-ethers/commit/55803e8963256f5270f44d2ac9163af1b6c86654))
+
+
+### Reverts
+
+* Revert "feat: support v26, remove support for v25 (#243)" (#244) ([ebaefba](https://github.com/zksync-sdk/zksync-ethers/commit/ebaefbab1a9d0fb4f0aed2384cffafd65bf67189)), closes [#243](https://github.com/zksync-sdk/zksync-ethers/issues/243) [#244](https://github.com/zksync-sdk/zksync-ethers/issues/244)
+
+## [6.16.2](https://github.com/zksync-sdk/zksync-ethers/compare/v6.16.1...v6.16.2) (2025-03-18)
+
+
+### Bug Fixes
+
+* increase l2 gas limit ([0da8fdb](https://github.com/zksync-sdk/zksync-ethers/commit/0da8fdb3508c412bbfff09fdd56a0b2e0833e31b))
+
 ## [6.16.1](https://github.com/zksync-sdk/zksync-ethers/compare/v6.16.0...v6.16.1) (2025-02-12)
 
 
